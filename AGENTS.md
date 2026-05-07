@@ -1,0 +1,85 @@
+# OpenCode Agents Project
+
+Project-scoped OpenCode installation wrapping the `agents-opencode` plugin. All agent configs, commands, and skills live under `.opencode/`.
+
+## Project Stack
+
+- TypeScript 5.7+ strict, ESM (`"type": "module"`)
+- Node 22+, `Node16` module resolution
+- Build target: `dist/` from `src/`
+- No test runner, linter, or formatter configured
+
+## Daily Commands
+
+| Command | What it does |
+|---------|--------------|
+| `npm run build` | `tsc` — compiles `src/` to `dist/` |
+| `npm run dev` | `tsc --watch` |
+| `npm start` | `node dist/index.js` |
+
+Run `build` before `start`; there is no pre-build hook.
+
+## OpenCode Config
+
+`opencode.json` loads `agents-opencode` and sets restrictive permissions:
+
+- `external_directory: deny` — agents cannot write outside the workspace
+- `doom_loop: deny` — iterative loops are blocked by default
+
+## Agent Inventory
+
+| Agent | Purpose |
+|-------|---------|
+| `@orchestrator` | Multi-phase coordination, execution loops |
+| `@planner` | Read-only architecture and refactoring plans |
+| `@codebase` | Feature implementation, test generation |
+| `@review` | Security, performance, code quality |
+| `@docs` | README, API docs, ADRs |
+| `@em-advisor` | Leadership / 1-on-1 guidance |
+| `@blogger` | Tech content drafting |
+| `@brutal-critic` | Harsh content quality gate |
+| `@legal-advisor` | License, IP, privacy audits |
+
+## Custom Commands
+
+Slash commands are defined as `.md` files in `.opencode/commands/`. Run with `/command-name` in the TUI.
+
+High-value ones:
+- `/plan-project [goal]` — orchestrator phase planning
+- `/execution-loop [task]` — bounded verify-and-continue loop
+- `/code-review [scope]` — review current changes or a file
+- `/generate-tests [file]` — generate unit tests
+- `/refactor-plan [scope]` — planner-driven refactoring
+- `/security-audit [scope]` — security review
+- `/legal-review [scope]` — compliance audit
+- `/blog-post [topic]` — draft content
+- `/content-review [text]` — brutal-critic review
+
+Add a new command:
+1. Create `.opencode/commands/<name>.md`
+2. Frontmatter:
+   ```yaml
+   ---
+   description: What this does
+   agent: recommended-agent
+   subtask: true
+   ---
+   ```
+3. Write the prompt template in the body
+
+## Skills
+
+Load on-demand with the `skill` tool. Available:
+`typescript`, `node-express`, `react-next`, `python`, `go`, `rust`, `java-spring`, `dotnet`, `ruby-rails`, `flutter`, `sql-migrations`, `ux-responsive`, `blogger`, `brutal-critic`, `docs-validation`, `agent-diagnostics`, `project-bootstrap`.
+
+Add a new skill by creating a directory under `.opencode/skills/<name>/` with a `SKILL.md` entry point.
+
+## Entry Point
+
+`src/index.ts` is the compiled CLI entry point (`#!/usr/bin/env node`). Currently minimal; extend here for custom runtime logic.
+
+## Notes
+
+- `.opencode/` is managed by the OpenCode CLI; do not edit agent `.md` configs unless you intend to change agent behavior globally for this project.
+- `package-lock.json` in `.opencode/` pins the plugin version.
+- No CI, pre-commit, or automated checks are set up.
