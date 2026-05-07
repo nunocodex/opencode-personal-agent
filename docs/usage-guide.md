@@ -1,269 +1,253 @@
 # OpenCode Agents — Usage Guide
 
-A complete guide to using the OpenCode CLI, agents, slash commands, and skills in this project.
-
 > **Language:** This guide is also available in [Italian 🇮🇹](usage-guide.it.md).
 
-## Table of Contents
+## The Golden Rule
 
-- [Prerequisites](#prerequisites)
-- [Project Setup](#project-setup)
-- [Quick Start](#quick-start)
-- [Agents](#agents)
-- [Slash Commands](#slash-commands)
-- [Skills](#skills)
-- [Extending the Project](#extending-the-project)
-- [Project Structure](#project-structure)
-- [Important Notes](#important-notes)
+**Agents do nothing on their own.**  
+You must always type a prompt and tell the agent what to do.  
+Think of them as expert colleagues: you give them a task, they execute it.
 
 ---
 
-## Prerequisites
+## Quick Start (Real Example)
 
-- **Node.js 22+**
-- **OpenCode CLI** installed globally (`npm install -g @opencode-ai/cli`)
-- The project dependencies under `.opencode/` are already installed
+**Goal:** You want to add a function that validates emails and get it tested.
 
-## Project Setup
-
+**Step 1 — Open the TUI**
 ```bash
-# Compile TypeScript source to dist/
-npm run build
-
-# Start the compiled CLI entry point
-npm start
-
-# Watch mode for development (auto-rebuild on changes)
-npm run dev
+opencode
 ```
 
-> **Note:** `npm start` requires `npm run build` first. There is no pre-build hook.
+**Step 2 — Initialize context**
+```
+/init
+```
 
-## Quick Start
+**Step 3 — Ask the agent to implement**
+```
+@codebase Create a TypeScript function `isValidEmail(email: string): boolean` in `src/utils/validators.ts`. Use a simple regex. Export it.
+```
 
-1. Start the OpenCode interactive session:
-   ```bash
-   opencode
-   ```
-2. Initialize the project context:
-   ```bash
-   /init
-   ```
-3. Invoke an agent or command (see examples below).
+**Step 4 — Ask the agent to generate tests**
+```
+@generate-tests src/utils/validators.ts
+```
+
+**Step 5 — Review what was generated**
+```
+@code-review src/utils/validators.ts
+```
+
+> **Note:** You typed three separate prompts. The agents did not talk to each other automatically.
 
 ---
 
-## Agents
+## Real-World Workflows
 
-Agents are invoked with `@agent-name` followed by your request.
+### Workflow 1: "I Need Documentation for My Code"
 
-### `@codebase` — Feature Implementation & Testing
-Implements features, refactors code, and generates tests.
+**Scenario:** You just wrote `src/auth/login.ts` and want a README section.
 
-**Example:**
+**What you type:**
 ```
-@codebase Create a TypeScript utility function that validates email addresses using Zod, with unit tests.
-```
-
-### `@planner` — Architecture & Refactoring Plans
-Produces read-only analysis and step-by-step plans without modifying code.
-
-**Example:**
-```
-@planner Plan a refactoring to split the monolithic src/index.ts into separate modules for CLI argument parsing, logging, and business logic.
+@docs Read src/auth/login.ts and write a "Authentication" section for README.md. Include: purpose, how to call it, expected inputs/outputs, and one usage example.
 ```
 
-### `@review` — Security, Performance & Quality
-Audits code for vulnerabilities, performance bottlenecks, and style issues.
-
-**Example:**
+**Want a harsh review of your docs?**
 ```
-@review Review src/index.ts for security best practices and suggest improvements.
-```
-
-### `@docs` — Documentation Generation
-Creates READMEs, API docs, Architecture Decision Records (ADRs), and guides.
-
-**Example:**
-```
-@docs Generate API documentation for all exported functions in src/.
-```
-
-### `@orchestrator` — Multi-Phase Coordination
-Coordinates complex tasks across multiple agents with verification loops.
-
-**Example:**
-```
-@orchestrator Implement a user authentication system with login, registration, and JWT tokens. Use @planner for the architecture, @codebase for implementation, and @review for validation.
-```
-
-### `@blogger` — Tech Content Drafting
-Writes blog posts, articles, video scripts, and podcasts.
-
-**Example:**
-```
-@blogger Write a blog post titled "Getting Started with OpenCode Agents" covering setup, agents, and commands.
-```
-
-### `@brutal-critic` — Content Quality Gate
-Provides harsh but constructive criticism of content, code, or documentation.
-
-**Example:**
-```
-@brutal-critic Review the README.md file and point out every weakness, ambiguity, or missing detail.
-```
-
-### `@em-advisor` — Engineering Management Guidance
-Helps with leadership, 1-on-1s, team dynamics, and prioritization.
-
-**Example:**
-```
-@em-advisor Prepare a 1-on-1 agenda with my junior developer who is struggling with TypeScript strict mode.
-```
-
-### `@legal-advisor` — License & Compliance Audits
-Reviews licenses, intellectual property, and data privacy (GDPR, CCPA, etc.).
-
-**Example:**
-```
-@legal-advisor Audit the dependencies in package.json for license compatibility with MIT and flag any GPL or proprietary conflicts.
+@brutal-critic Review the "Authentication" section in README.md. List every ambiguity, missing detail, or weakness a new developer would face.
 ```
 
 ---
 
-## Slash Commands
+### Workflow 2: "I Want to Refactor, But I Need a Plan First"
 
-Slash commands are shortcuts defined in `.opencode/commands/`. Run them with `/command-name` in the OpenCode TUI.
+**Scenario:** `src/index.ts` is a 300-line mess and you are afraid to break things.
 
-### Planning & Execution
-
-| Command | Example |
-|---------|---------|
-| `/plan-project` | `/plan-project Add OAuth2 authentication with GitHub and Google providers` |
-| `/execution-loop` | `/execution-loop Refactor all utility functions to use async/await` |
-| `/stop-loop` | `/stop-loop Authentication logic is verified and complete` |
-
-### Code Quality & Testing
-
-| Command | Example |
-|---------|---------|
-| `/code-review` | `/code-review src/utils/validator.ts` |
-| `/generate-tests` | `/generate-tests src/utils/validator.ts` |
-| `/security-audit` | `/security-audit src/auth/` |
-| `/architecture-review` | `/architecture-review Proposed microservices split` |
-
-### Documentation
-
-| Command | Example |
-|---------|---------|
-| `/api-docs` | `/api-docs src/routes/` |
-| `/create-readme` | `/create-readme` |
-| `/architecture-decision` | `/architecture-decision Migrate from REST to GraphQL` |
-
-### Content & Compliance
-
-| Command | Example |
-|---------|---------|
-| `/blog-post` | `/blog-post How to build scalable APIs with Node.js` |
-| `/content-review` | `/content-review README.md` |
-| `/legal-review` | `/legal-review package.json` |
-
-### Management
-
-| Command | Example |
-|---------|---------|
-| `/1-on-1-prep` | `/1-on-1-prep Alice TypeScript migration concerns` |
-
----
-
-## Skills
-
-Skills are specialized instruction sets for specific domains. Load them on-demand when working on a relevant task.
-
-**How to load a skill:**
+**What you type:**
 ```
-Use the typescript skill to refactor this code to strict mode.
+@planner I want to split src/index.ts into: cli.ts (argument parsing), logger.ts (logging), and index.ts (orchestration). Do not edit files. Just give me a numbered step-by-step plan.
 ```
 
-**Available skills:**
-- `typescript` — TypeScript strict mode, modern patterns, type safety
-- `node-express` — Node.js & Express API best practices
-- `react-next` — React & Next.js with TypeScript and accessibility
-- `python` — Python type hints, testing, structure
-- `go` — Go modules, error handling, concurrency
-- `rust` — Rust ownership, error handling, performance
-- `java-spring` — Spring Boot, DI, validation, testing
-- `dotnet` — Clean Architecture, C# conventions
-- `ruby-rails` — Rails MVC, ActiveRecord, testing
-- `flutter` — Riverpod, Freezed, feature-based architecture
-- `sql-migrations` — Safe schema changes, migration best practices
-- `ux-responsive` — Responsive design, accessibility-first
-- `blogger` — Tech content creation
-- `brutal-critic` — Content review frameworks
-- `docs-validation` — Documentation quality checks
-- `agent-diagnostics` — Validate agent configs and setup
-- `project-bootstrap` — Create baseline OpenCode project context
-
-**Adding a new skill:**
-1. Create `.opencode/skills/<name>/SKILL.md`
-2. Write domain-specific instructions and examples
-3. Reference it in conversation when needed
+**After you like the plan, execute it:**
+```
+@codebase Follow the refactoring plan from @planner exactly. Create the new files and update imports.
+```
 
 ---
 
-## Extending the Project
+### Workflow 3: "I Need a Blog Post About This Project"
 
-### Adding a Custom Agent
+**What you type:**
+```
+@blogger Write a 800-word blog post titled "How I Use OpenCode Agents to Speed Up Development". Target audience: developers who have never used AI agents. Include: what OpenCode is, one concrete example with @codebase, and a tip for beginners.
+```
 
-1. Create `.opencode/agents/<agent-name>.md`
-2. Define the agent's purpose, instructions, and constraints
-3. Invoke with `@agent-name`
-
-### Adding a Custom Slash Command
-
-1. Create `.opencode/commands/<command-name>.md`
-2. Add frontmatter:
-   ```yaml
-   ---
-   description: What this command does
-   agent: recommended-agent
-   subtask: true
-   ---
-   ```
-3. Write the prompt template in the body
-4. Run with `/command-name` in the TUI
-
-### Adding Runtime Logic
-
-The compiled CLI entry point is `src/index.ts`. Extend it for custom runtime behavior. Remember to run `npm run build` before testing with `npm start`.
+**Then make it better with criticism:**
+```
+@brutal-critic Review the blog post. Be harsh but constructive. Tell me what is boring, generic, or missing.
+```
 
 ---
 
-## Project Structure
+### Workflow 4: "I Need to Check Licenses Before Publishing"
+
+**What you type:**
+```
+@legal-advisor Read package.json and .opencode/package.json. Check all dependencies for license compatibility with MIT. Flag any GPL, proprietary, or unclear licenses.
+```
+
+---
+
+### Workflow 5: "I Have a Complex Feature That Needs Multiple Agents"
+
+**What you type:**
+```
+@orchestrator I need a user authentication system with: registration, login, JWT tokens, and password hashing. Plan the architecture first, then implement it, then review it for security. Report back what was done at each step.
+```
+
+> **What happens:** Orchestrator calls @planner → @codebase → @review in sequence. You still gave ONE prompt, but the orchestrator managed the chain.
+
+---
+
+## How Agents Work (The Honest Version)
+
+| Myth | Reality |
+|------|---------|
+| Agents scan my code automatically | ❌ No. They only read what you ask them to read. |
+| Agents fix bugs while I sleep | ❌ No. You must prompt them to do it. |
+| Slash commands are magic buttons | ⚠️ Kind of. They are pre-written prompts. You still run them manually. |
+| Skills make the agent smarter automatically | ❌ No. You ask the agent to "use the X skill". Otherwise it ignores it. |
+
+---
+
+## Common Tasks — Exact Prompts You Can Copy
+
+### `@codebase`
+```
+@codebase Create a TypeScript class UserService in src/services/user.ts with methods: createUser, getUserById, updateUser. Use in-memory storage for now.
+```
+
+```
+@codebase Add error handling to src/services/user.ts. Throw custom errors for "not found" and "invalid input".
+```
+
+### `@generate-tests`
+```
+/generate-tests src/services/user.ts
+```
+
+### `@code-review`
+```
+/code-review src/services/user.ts
+```
+
+### `@security-audit`
+```
+/security-audit src/auth/
+```
+
+### `@docs`
+```
+@docs Generate API docs for everything exported from src/services/ and write them to docs/api.md.
+```
+
+### `@create-readme`
+```
+/create-readme
+```
+
+### `@blog-post`
+```
+/blog-post Why TypeScript Strict Mode Saves Hours of Debugging
+```
+
+### `@1-on-1-prep`
+```
+/1-on-1-prep Alice She seems overwhelmed by the new codebase
+```
+
+---
+
+## What Are Skills? (And How to Actually Use Them)
+
+A **skill** is a pack of domain-specific best practices. It does **nothing** until you mention it.
+
+**Wrong:**  
+*(You do nothing. The skill is not active.)*
+
+**Right:**
+```
+@codebase Refactor this to follow TypeScript strict mode best practices. Use the typescript skill.
+```
+
+**Another example:**
+```
+@planner Plan a REST API for a blog. Use the node-express skill for routing conventions.
+```
+
+---
+
+## Project Commands (Outside the TUI)
+
+These are plain npm scripts. Run them in your normal terminal, not inside `opencode`.
+
+| Command | When to use it |
+|---------|---------------|
+| `npm run build` | Before running `npm start`, after any code change |
+| `npm run dev` | While developing (auto-rebuild on save) |
+| `npm start` | Run the compiled CLI. Only works after `build` |
+
+**Typical session:**
+```bash
+npm run dev    # In terminal 1: watch mode
+opencode       # In terminal 2: talk to agents
+```
+
+---
+
+## File Layout That Matters
 
 ```
 .
-├── src/                          # TypeScript source
-│   └── index.ts                  # CLI entry point
-├── dist/                         # Compiled output (from tsc)
-├── docs/                         # Project documentation
-│   ├── usage-guide.md            # This guide
-│   └── usage-guide.it.md         # Italian version
-├── .opencode/
-│   ├── agents/                   # Agent configuration files
-│   ├── commands/                 # Slash command definitions
-│   ├── skills/                   # Domain-specific skill packs
-│   └── package.json              # Plugin dependencies
-├── opencode.json                 # OpenCode CLI configuration
-├── tsconfig.json                 # TypeScript strict, ESM, Node16
-└── package.json                  # Project manifest
+├── src/                  # Your TypeScript code (edit here)
+├── dist/                 # Compiled JS (do not edit, generated by tsc)
+├── docs/                 # Documentation you write or generate
+├── .opencode/agents/     # Agent personalities (rarely edit)
+├── .opencode/commands/   # Slash command templates
+├── .opencode/skills/     # Domain knowledge packs
+├── AGENTS.md             # Agent conventions for this repo
+└── opencode.json         # CLI config (permissions, plugin)
 ```
+
+> **Important:** `opencode.json` forbids agents from writing outside this folder (`external_directory: deny`) and blocks unbounded loops (`doom_loop: deny`). If an agent asks for permission, that is why.
 
 ---
 
-## Important Notes
+## Checklist Before You Start
 
-- **Permissions:** `opencode.json` denies `external_directory` writes and `doom_loop`. Agents cannot write outside this workspace or run unbounded iterative loops by default.
-- **No pre-build hook:** Always run `npm run build` before `npm start`.
-- **No test/lint/CI configured:** There is no test runner, linter, formatter, or CI pipeline set up yet.
-- **Agent configs are global:** Editing files under `.opencode/agents/` changes agent behavior for this project permanently.
+- [ ] `npm run build` succeeds with no TypeScript errors
+- [ ] You launched `opencode` and ran `/init`
+- [ ] You know which agent handles your task (use the table below)
+
+| I want to... | Use this |
+|-------------|----------|
+| Write or refactor code | `@codebase` |
+| Plan before touching code | `@planner` |
+| Check security/quality | `@review`, `/security-audit`, `/code-review` |
+| Write docs or README | `@docs`, `/api-docs`, `/create-readme` |
+| Write a blog post | `@blogger`, `/blog-post` |
+| Get harsh feedback | `@brutal-critic`, `/content-review` |
+| Coordinate a big feature | `@orchestrator`, `/plan-project` |
+| Check licenses | `@legal-advisor`, `/legal-review` |
+| Prepare a 1-on-1 | `@em-advisor`, `/1-on-1-prep` |
+
+---
+
+## Still Stuck?
+
+If you are unsure which agent to use, ask the orchestrator:
+```
+@orchestrator I need to [describe your goal]. Which agent should I use, and what should I ask them?
+```
