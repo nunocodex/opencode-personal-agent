@@ -32,7 +32,7 @@ export function registerCommandHandlers(bot: any, store: SessionStore, processMa
         "/status - Show server status\n" +
         "/restart - Restart the OpenCode server\n" +
         "/help - Show available commands\n\n" +
-        "Just send me a message to start chatting."
+        "You can also send voice messages."
     );
   });
 
@@ -44,7 +44,7 @@ export function registerCommandHandlers(bot: any, store: SessionStore, processMa
         "/status - Show server status\n" +
         "/restart - Restart the OpenCode server\n" +
         "/help - This message\n\n" +
-        "You can also send text, documents, and photos.",
+        "You can also send text, documents, photos, and voice messages.",
       { parse_mode: "Markdown" }
     );
   });

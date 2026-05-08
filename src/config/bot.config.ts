@@ -11,6 +11,8 @@ export interface BotConfig {
   opencodeServerUrl: string;
   opencodeServerUsername?: string;
   opencodeServerPassword?: string;
+  whisperBinaryPath?: string;
+  whisperModelPath?: string;
 }
 
 export function getEnv(key: string, required: true): string;
@@ -42,4 +44,6 @@ export const botConfig: BotConfig = {
   opencodeServerUrl: getEnv("OPENCODE_SERVER_URL") ?? "http://127.0.0.1:4096",
   opencodeServerUsername: getEnv("OPENCODE_SERVER_USERNAME"),
   opencodeServerPassword: getEnv("OPENCODE_SERVER_PASSWORD"),
+  whisperBinaryPath: getEnv("WHISPER_BINARY_PATH"),
+  whisperModelPath: getEnv("WHISPER_MODEL_PATH"),
 };
