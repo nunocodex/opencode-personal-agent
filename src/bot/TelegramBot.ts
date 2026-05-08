@@ -1,11 +1,13 @@
 import { Telegraf, Context } from "telegraf";
-import { startServer, stopServer } from "../opencode/Server.js";
+import { ProcessManager } from "../process/ProcessManager.js";
 import { SessionStore } from "./SessionStore.js";
 import { registerCommandHandlers } from "./handlers/CommandHandler.js";
 import { registerTextHandler } from "./handlers/TextHandler.js";
 import { registerDocumentHandler } from "./handlers/DocumentHandler.js";
 import { registerPhotoHandler } from "./handlers/PhotoHandler.js";
 import { botConfig } from "../config/bot.config.js";
+
+export let processManager: ProcessManager | null = null;
 
 export async function startBot(): Promise<void> {
   const token = botConfig.telegramBotToken;
@@ -15,10 +17,20 @@ export async function startBot(): Promise<void> {
     process.exit(1);
   }
 
+  const parsedUrl = new URL(botConfig.opencodeServerUrl);
+  processManager = new ProcessManager({
+    serverUrl: botConfig.opencodeServerUrl,
+    projectDir: botConfig.opencodeProjectDir,
+    serverPort: parseInt(parsedUrl.port, 10) || 4096,
+    serverHost: parsedUrl.hostname,
+    serverUsername: botConfig.opencodeServerUsername,
+    serverPassword: botConfig.opencodeServerPassword,
+  });
+
   const allowedChatId = botConfig.allowedChatId;
   const store = new SessionStore();
 
-  await startServer(botConfig.opencodeProjectDir);
+  await processManager.start();
 
   const bot = new Telegraf(token, { handlerTimeout: 900_000 });
 
@@ -34,7 +46,7 @@ export async function startBot(): Promise<void> {
     await next();
   });
 
-  registerCommandHandlers(bot, store);
+  registerCommandHandlers(bot, store, processManager);
   registerTextHandler(bot, store);
   registerDocumentHandler(bot, store);
   registerPhotoHandler(bot, store);
@@ -42,14 +54,20 @@ export async function startBot(): Promise<void> {
   bot.launch();
   console.log("Telegram bot started. Press Ctrl+C to stop.");
 
-  process.once("SIGINT", async () => {
-    console.log("\n[bot] received SIGINT, shutting down...");
-    await stopServer();
-    bot.stop("SIGINT");
-  });
-  process.once("SIGTERM", async () => {
-    console.log("\n[bot] received SIGTERM, shutting down...");
-    await stopServer();
-    bot.stop("SIGTERM");
-  });
+  let shutdownInProgress = false;
+  const shutdown = async (signal: string) => {
+    if (shutdownInProgress) {
+      console.log(`[bot] received ${signal} again, forcing exit...`);
+      process.exit(1);
+    }
+    shutdownInProgress = true;
+    console.log(`\n[bot] received ${signal}, shutting down...`);
+    if (processManager) {
+      await processManager.stop();
+    }
+    bot.stop(signal);
+  };
+
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }

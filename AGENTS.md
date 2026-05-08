@@ -1,5 +1,16 @@
 # OpenCode Agents Project
 
+### 2026-05-08 12:00 - Stage 1 Process State Management Module
+**Agent:** codebase
+**Summary:** Implemented centralized process lifecycle management for `opencode serve` child process.
+- Created `src/process/ProcessManager.ts` with idempotent `start()`, graceful `stop()` (SIGTERM → SIGKILL, Windows `taskkill` fallback), `restart()`, health checks with Basic Auth, state tracking, and callback subscriptions.
+- Created `src/process/ProcessStateStore.ts` mirroring `SessionStore.ts` pattern with atomic writes to `./data/process-state.json`.
+- Refactored `src/opencode/Server.ts` to strip all process management, keeping only `getAttachUrl()` and URL constants.
+- Updated `src/bot/TelegramBot.ts` to instantiate `ProcessManager` from config, call `start()`/`stop()` on lifecycle events, and export the instance for graceful shutdown.
+- Updated `src/index.ts` with `try/catch/finally` wrapper ensuring `processManager.stop()` is called on fatal errors.
+- Added `/status` and `/restart` commands to `src/bot/handlers/CommandHandler.ts` with human-readable output.
+- Build passes (`npm run build`) with zero TypeScript errors in strict mode.
+
 Project-scoped OpenCode installation wrapping the `agents-opencode` plugin. All agent configs, commands, and skills live under `.opencode/`.
 
 ## Project Stack

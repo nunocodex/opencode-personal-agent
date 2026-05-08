@@ -31,3 +31,11 @@ temp/
 
 # Reference projects (local only)
 reference/
+
+# Runtime data directories
+data/
+memory/
+workspace/
+
+# Test coverage output
+coverage/

@@ -2,7 +2,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 
 // Load .env before any config access
-config({ path: resolve(process.cwd(), ".env") });
+config({ path: resolve(process.cwd(), ".env"), override: true });
 
 export interface BotConfig {
   telegramBotToken: string;
@@ -13,12 +13,24 @@ export interface BotConfig {
   opencodeServerPassword?: string;
 }
 
-function getEnv(key: string, required: true): string;
-function getEnv(key: string, required?: false): string | undefined;
-function getEnv(key: string, required = false): string | undefined {
+export function getEnv(key: string, required: true): string;
+export function getEnv(key: string, required?: false): string | undefined;
+export function getEnv(key: string, required = false): string | undefined {
   const value = process.env[key];
   if (required && !value) {
     throw new Error(`Environment variable ${key} is required`);
+  }
+  if (key === "TELEGRAM_BOT_TOKEN" && value) {
+    const trimmed = value.trim();
+    if (!/^\d+:[A-Za-z0-9_-]+$/.test(trimmed)) {
+      throw new Error(
+        `Invalid TELEGRAM_BOT_TOKEN format. ` +
+          `Expected: 123456789:ABCdef... ` +
+          `Got length ${trimmed.length}. ` +
+          `Check .env for quotes, spaces, or newlines.`
+      );
+    }
+    return trimmed;
   }
   return value;
 }
