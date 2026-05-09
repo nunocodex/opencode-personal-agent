@@ -1,7 +1,7 @@
 import { Context } from "telegraf";
 import { message } from "telegraf/filters";
 import { SessionStore } from "../SessionStore.js";
-import { createSession, sendMessage } from "../../opencode/Client.js";
+import { initializeSession, sendMessage } from "../../opencode/Client.js";
 import { sendReply } from "../utils/sendReply.js";
 import { botConfig } from "../../config/bot.config.js";
 import { processScheduleBlocks } from "../utils/processScheduleBlocks.js";
@@ -28,7 +28,7 @@ export function registerTextHandler(bot: any, store: SessionStore, scheduler?: E
     try {
       let sessionEntry = store.get(chatId);
       if (!sessionEntry) {
-        const sessionId = await createSession("OpenCode Agents chat", botConfig.opencodeProjectDir);
+        const sessionId = await initializeSession(botConfig.opencodeProjectDir);
         store.set(chatId, sessionId);
         sessionEntry = store.get(chatId)!;
         console.log(`[bot] created new session ${sessionId} for chat ${chatId}`);

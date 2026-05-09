@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-const { mockCreateSession, mockSendMessage, mockSendReply } = vi.hoisted(() => ({
-  mockCreateSession: vi.fn(),
+const { mockInitializeSession, mockSendMessage, mockSendReply } = vi.hoisted(() => ({
+  mockInitializeSession: vi.fn(),
   mockSendMessage: vi.fn(),
   mockSendReply: vi.fn(),
 }));
 
 vi.mock("../../opencode/Client.js", () => ({
-  createSession: mockCreateSession,
+  initializeSession: mockInitializeSession,
   sendMessage: mockSendMessage,
 }));
 
@@ -53,7 +53,7 @@ describe("registerTextHandler", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    mockCreateSession.mockReset();
+    mockInitializeSession.mockReset();
     mockSendMessage.mockReset();
     mockSendReply.mockReset();
     bot = { on: vi.fn() };
@@ -95,7 +95,7 @@ describe("registerTextHandler", () => {
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
       });
-    mockCreateSession.mockResolvedValue("new-sess-1");
+    mockInitializeSession.mockResolvedValue("new-sess-1");
     mockSendMessage.mockResolvedValue({ text: "new response" });
 
     registerTextHandler(bot, store);
@@ -104,7 +104,7 @@ describe("registerTextHandler", () => {
     await handler(ctx);
     await vi.advanceTimersByTimeAsync(1);
 
-    expect(mockCreateSession).toHaveBeenCalledWith("OpenCode Agents chat", "/test/project");
+    expect(mockInitializeSession).toHaveBeenCalledWith("/test/project");
     expect(store.set).toHaveBeenCalledWith("123456", "new-sess-1");
     expect(mockSendMessage).toHaveBeenCalledWith("new-sess-1", "hello");
     expect(mockSendReply).toHaveBeenCalledWith(ctx, "new response", 42);

@@ -17,7 +17,7 @@ vi.mock("../../voice/transcribe.js", () => ({
 }));
 
 vi.mock("../../opencode/Client.js", () => ({
-  createSession: mockCreateSession,
+  initializeSession: mockCreateSession,
   sendMessage: mockSendMessage,
 }));
 
@@ -152,7 +152,7 @@ describe("registerVoiceHandler", () => {
     await handler(ctx);
     await vi.advanceTimersByTimeAsync(1);
 
-    expect(mockCreateSession).toHaveBeenCalledWith("OpenCode Agents chat", "/test/project");
+    expect(mockCreateSession).toHaveBeenCalledWith("/test/project");
     expect(store.set).toHaveBeenCalledWith("123456", "sess-new");
     expect(mockSendMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
   });

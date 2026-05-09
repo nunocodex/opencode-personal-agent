@@ -25,7 +25,7 @@ const {
 }));
 
 vi.mock("../../opencode/Client.js", () => ({
-  createSession: mockCreateSession,
+  initializeSession: mockCreateSession,
   sendMessage: mockSendMessage,
 }));
 

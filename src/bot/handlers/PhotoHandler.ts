@@ -6,7 +6,7 @@ import { resolve } from "path";
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import { SessionStore } from "../SessionStore.js";
-import { createSession, sendMessage } from "../../opencode/Client.js";
+import { initializeSession, sendMessage } from "../../opencode/Client.js";
 import { sendReply } from "../utils/sendReply.js";
 import { botConfig } from "../../config/bot.config.js";
 import { processScheduleBlocks } from "../utils/processScheduleBlocks.js";
@@ -58,7 +58,7 @@ export function registerPhotoHandler(bot: any, store: SessionStore, scheduler?: 
 
       let sessionEntry = store.get(chatId);
       if (!sessionEntry) {
-        const sessionId = await createSession("OpenCode Agents chat", botConfig.opencodeProjectDir);
+        const sessionId = await initializeSession(botConfig.opencodeProjectDir);
         store.set(chatId, sessionId);
         sessionEntry = store.get(chatId)!;
       }
