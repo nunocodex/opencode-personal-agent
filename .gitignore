@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+.venv*/
+venv/
+venv*/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+storage/logs/*.log
+
+# Temp & Cache
+storage/temp/*
+!storage/temp/.gitkeep
+storage/models/*
+!storage/models/.gitkeep
+
+# Coverage
+.coverage/
+coverage/
+coverage.json
+.pytest_cache/
+.cache/
+htmlcov/
+
+# Reference projects (local only)
+reference/
