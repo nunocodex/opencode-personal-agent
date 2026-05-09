@@ -33,15 +33,23 @@ export async function runWhisper(
     assets.modelPath,
     "-f",
     wavPath,
-    "-np",
     "-nt",
+    "-l",
+    "it",
   ]);
 
   if (result.exitCode !== 0) {
     throw new Error(`whisper failed: ${result.stderr || result.stdout}`);
   }
 
-  return result.stdout.trim();
+  // Filter out empty lines and [BLANK_AUDIO] markers, normalize whitespace
+  return result.stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && l !== "[BLANK_AUDIO]")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function transcribeVoice(fileUrl: string): Promise<string> {

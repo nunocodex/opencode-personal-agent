@@ -101,8 +101,9 @@ describe("runWhisper", () => {
       "/model.bin",
       "-f",
       "/audio.wav",
-      "-np",
       "-nt",
+      "-l",
+      "it",
     ]);
   });
 
