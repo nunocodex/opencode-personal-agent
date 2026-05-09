@@ -7,8 +7,10 @@
 - **Scheduler engine:** 1-second tick loop, atomic JSON persistence, exponential backoff retry, graceful shutdown with tick drain.
 - **Event types:** One-shot reminders (e.g., "tra 5 minuti") and recurring schedules (cron, daily, weekly, interval).
 - **OpenCode integration:** Scheduling driven by `[SCHEDULE]` blocks in OpenCode responses — no Telegram commands needed.
+- **Natural language:** OpenCode is instructed via automatic system prompt (`SCHEDULER_SYSTEM_PROMPT` sent on session creation) to understand phrases like "ricordami tra 5 minuti di andare a letto".
 - **Safety:** Missed events skipped on restart (not executed catch-up). Unauthorized events deleted. `allowedChatId` enforced.
-- **Git:** Commit `228ad2d` on `main`. 25 files changed, 951 insertions.
+- **Docs:** Created `docs/SCHEDULER_GUIDE.md` with examples and protocol reference.
+- **Git:** Commits `228ad2d` (scheduler), `6fc4516` (system prompt), `4a3c1a0` (docs) on `main`.
 
 ### 2026-05-09 22:00 - Merge Complete Verification & Voice into main
 **Agent:** orchestrator / codebase / planner / general
