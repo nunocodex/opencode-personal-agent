@@ -11,8 +11,8 @@
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url> opencode-agents
-cd opencode-agents
+git clone <repo-url> opencode-personal-agent
+cd opencode-personal-agent
 ```
 
 ### 2. Create virtual environment

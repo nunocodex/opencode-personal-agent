@@ -34,7 +34,7 @@ python -m src.cli setup && python -m src.cli check && python -m src.cli start
 ## 📁 Structure
 
 ```
-opencode-agents/
+opencode-personal-agent/
 ├── src/           # Python source code
 │   ├── main.py    # Entry point
 │   ├── cli.py     # CLI commands
