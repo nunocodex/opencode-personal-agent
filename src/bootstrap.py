@@ -41,8 +41,8 @@ def _clean_temp() -> None:
                 entry.unlink()
             elif entry.is_dir():
                 shutil.rmtree(entry)
-        except OSError:
-            pass
+        except OSError as exc:
+            print(f"[bootstrap] temp cleanup warning: {exc}")
 
 
 def run_checks() -> Config:

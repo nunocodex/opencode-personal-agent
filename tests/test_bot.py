@@ -37,7 +37,7 @@ class TestSendReply:
         await send_reply(mock_update, "hello")
         mock_update.effective_message.reply_text.assert_called_once_with(
             "hello",
-            reply_to_message_id=None,
+            do_quote=True,
         )
 
     async def test_long_message_split(self, mock_update: MagicMock) -> None:
@@ -139,3 +139,98 @@ class TestBotHandlers:
         handlers.client.send_message = AsyncMock(return_value="response")
         await handlers.on_document(mock_update, mock_context)
         handlers.client.send_message.assert_awaited_once()
+
+
+class TestAuthCheck:
+    """Verify per-handler auth blocks unauthorized users."""
+
+    @pytest.fixture
+    def handlers(self, config: Config) -> BotHandlers:
+        store = SessionStore()
+        pm = MagicMock()
+        h = BotHandlers(config, store, pm)
+        h.client.create_session = AsyncMock()
+        h.client.send_message = AsyncMock()
+        h.client.delete_session = AsyncMock()
+        return h
+
+    @pytest.fixture
+    def unauth_update(self) -> MagicMock:
+        update = MagicMock()
+        update.effective_chat = MagicMock()
+        update.effective_chat.id = 99999  # not equal to allowed_chat_id
+        update.effective_chat.send_action = AsyncMock()
+        update.effective_message = MagicMock()
+        update.effective_message.message_id = 1
+        update.effective_message.text = "hello"
+        update.effective_message.caption = ""
+        update.effective_message.photo = []
+        update.effective_message.document = None
+        update.effective_message.voice = None
+        update.effective_message.reply_text = AsyncMock()
+        return update
+
+    async def test_cmd_start_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        await handlers.cmd_start(unauth_update, mock_context)
+        # Should reply "Access denied" and NOT proceed to welcome message
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_cmd_help_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        await handlers.cmd_help(unauth_update, mock_context)
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_cmd_new_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        await handlers.cmd_new(unauth_update, mock_context)
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_cmd_status_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        await handlers.cmd_status(unauth_update, mock_context)
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_cmd_restart_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        await handlers.cmd_restart(unauth_update, mock_context)
+        handlers.pm.restart.assert_not_called()
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_on_text_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        unauth_update.effective_message.text = "hello"
+        await handlers.on_text(unauth_update, mock_context)
+        handlers.client.send_message.assert_not_called()
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_on_photo_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        photo = MagicMock()
+        photo.file_id = "photo-id"
+        unauth_update.effective_message.photo = [photo]
+        mock_context.bot.get_file = AsyncMock()
+        await handlers.on_photo(unauth_update, mock_context)
+        handlers.client.send_message.assert_not_called()
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_on_document_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        doc = MagicMock()
+        doc.file_id = "doc-id"
+        doc.file_name = "doc.pdf"
+        unauth_update.effective_message.document = doc
+        mock_context.bot.get_file = AsyncMock()
+        await handlers.on_document(unauth_update, mock_context)
+        handlers.client.send_message.assert_not_called()
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)
+
+    async def test_on_voice_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+        voice = MagicMock()
+        voice.file_id = "voice-id"
+        unauth_update.effective_message.voice = voice
+        mock_context.bot.get_file = AsyncMock()
+        await handlers.on_voice(unauth_update, mock_context)
+        handlers.client.send_message.assert_not_called()
+        calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
+        assert any("Access denied" in c for c in calls)

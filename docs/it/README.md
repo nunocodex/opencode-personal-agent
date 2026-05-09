@@ -12,7 +12,7 @@ Telegram ──► python-telegram-bot ──► httpx ──► OpenCode Server
                   └── SessionStore (in memoria)
 ```
 
-- **Linguaggio:** Python 3.13+
+- **Linguaggio:** Python 3.12+
 - **Bot framework:** `python-telegram-bot` v21+
 - **HTTP client:** `httpx`
 - **Trascrizione vocale:** `faster-whisper` (locale, CPU int8)

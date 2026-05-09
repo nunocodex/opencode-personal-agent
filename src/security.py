@@ -63,6 +63,7 @@ def safe_path(filename: str, base_dir: str | Path) -> Path:
         target.relative_to(base)
     except ValueError as exc:
         raise ValueError(f"Path traversal blocked: {filename}") from exc
-    if is_sensitive(filename):
+    # Check both original filename and resolved path for sensitive patterns
+    if is_sensitive(filename) or is_sensitive(str(target)):
         raise ValueError(f"Sensitive file blocked: {filename}")
     return target

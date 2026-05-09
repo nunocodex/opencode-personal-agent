@@ -67,7 +67,7 @@ def load_config() -> Config:
     if os.path.exists(dotenv_path):
         try:
             from dotenv import load_dotenv
-            load_dotenv(dotenv_path, override=False)
+            load_dotenv(dotenv_path, override=True)
         except ImportError:
             pass
     return Config.from_env()

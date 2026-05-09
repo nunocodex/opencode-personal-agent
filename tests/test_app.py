@@ -1,40 +1,10 @@
 """Tests for PTB app builder."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
-import pytest
-
-from bot.app import _auth_middleware, build_app
+from bot.app import build_app
 from config import Config
-
-
-class TestAuthMiddleware:
-    async def test_allows_authorized(self, config: Config) -> None:
-        update = MagicMock()
-        update.effective_chat = MagicMock()
-        update.effective_chat.id = config.allowed_chat_id
-        ctx = MagicMock()
-        result = await _auth_middleware(update, ctx, config.allowed_chat_id)
-        assert result is True
-
-    async def test_blocks_unauthorized(self, config: Config) -> None:
-        update = MagicMock()
-        update.effective_chat = MagicMock()
-        update.effective_chat.id = 999
-        update.effective_message = MagicMock()
-        update.effective_message.reply_text = AsyncMock()
-        ctx = MagicMock()
-        result = await _auth_middleware(update, ctx, config.allowed_chat_id)
-        assert result is False
-        update.effective_message.reply_text.assert_awaited_once()
-
-    async def test_no_chat(self, config: Config) -> None:
-        update = MagicMock()
-        update.effective_chat = None
-        ctx = MagicMock()
-        result = await _auth_middleware(update, ctx, config.allowed_chat_id)
-        assert result is False
 
 
 class TestBuildApp:
