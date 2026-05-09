@@ -1,5 +1,15 @@
 # OpenCode Agents Project
 
+### 2026-05-10 06:00 - Scheduled Events System (Scheduler)
+**Agent:** orchestrator / codebase / planner / general
+**Summary:** Added autonomous scheduled events system. Bot can now execute reminders and recurring messages without user commands.
+- **Testing:** 199 tests across 21 test files. Scheduler 98.21% stmts, 98.98% lines coverage.
+- **Scheduler engine:** 1-second tick loop, atomic JSON persistence, exponential backoff retry, graceful shutdown with tick drain.
+- **Event types:** One-shot reminders (e.g., "tra 5 minuti") and recurring schedules (cron, daily, weekly, interval).
+- **OpenCode integration:** Scheduling driven by `[SCHEDULE]` blocks in OpenCode responses — no Telegram commands needed.
+- **Safety:** Missed events skipped on restart (not executed catch-up). Unauthorized events deleted. `allowedChatId` enforced.
+- **Git:** Commit `228ad2d` on `main`. 25 files changed, 951 insertions.
+
 ### 2026-05-09 22:00 - Merge Complete Verification & Voice into main
 **Agent:** orchestrator / codebase / planner / general
 **Summary:** Merged `feat/complete-verification` into `main`. Project now has 158 tests, 91%+ coverage, full voice support, and multilingual transcription.
