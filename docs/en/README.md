@@ -47,7 +47,7 @@ python -m src.cli start
 ## Project Structure
 
 ```
-opencode-agents/
+opencode-personal-agent/
 ├── src/
 │   ├── main.py              # Entry point
 │   ├── cli.py               # CLI commands (check/setup/start/test)

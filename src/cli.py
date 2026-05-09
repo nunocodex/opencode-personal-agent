@@ -61,7 +61,7 @@ def _cmd_test() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="opencode-agents", description="OpenCode Agents Telegram Bot")
+    parser = argparse.ArgumentParser(prog="opencode-personal-agent", description="OpenCode Personal Agent Bot")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("check", help="Run pre-flight checks")
     sub.add_parser("setup", help="Create .env and storage directories")
