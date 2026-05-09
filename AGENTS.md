@@ -1,13 +1,13 @@
 # OpenCode Agents Project
 
-### 2026-05-09 04:00 - Complete Verification & Voice Message Support
+### 2026-05-09 22:00 - Merge Complete Verification & Voice into main
 **Agent:** orchestrator / codebase / planner / general
-**Summary:** Expanded test coverage from 66% to 91%, added full voice message transcription, and renamed default branch `master` → `main`.
-- **Testing:** 157 tests across 15 test files. ProcessManager 100%, CommandHandler 100%, VoiceHandler 96%, spawnAsync 100%, transcribe 100% statements.
-- **Voice workflow:** Async `spawnAsync` wrapper (timeout + cancellation), ffmpeg OGG→WAV conversion, whisper.cpp local transcription (`-l it`), `VoiceHandler` integrated into TelegramBot lifecycle.
+**Summary:** Merged `feat/complete-verification` into `main`. Project now has 158 tests, 91%+ coverage, full voice support, and multilingual transcription.
+- **Testing:** 158 tests across 15 test files. ProcessManager 100%, CommandHandler 100%, VoiceHandler 96%, spawnAsync 100%, transcribe 100% statements.
+- **Voice workflow:** Async `spawnAsync` wrapper (timeout + cancellation), ffmpeg OGG→WAV conversion, whisper.cpp local transcription with auto-detect or configurable language (`WHISPER_LANGUAGE`), `VoiceHandler` integrated into TelegramBot lifecycle.
 - **Docs:** Created `docs/ProcessStateStore.md` to complete API reference suite.
-- **Config:** Added `WHISPER_BINARY_PATH` and `WHISPER_MODEL_PATH` env vars to `bot.config.ts`.
-- **Git:** Checkpoint commit `a78a1b0` on `master`, then renamed to `main`. Final feature commit `c2771b1` on `feat/complete-verification`.
+- **Config:** Added `WHISPER_BINARY_PATH`, `WHISPER_MODEL_PATH`, `WHISPER_LANGUAGE` env vars to `bot.config.ts`.
+- **Git:** Merged `feat/complete-verification` → `main` with merge commit `02ed5eb`. Branch renamed `master` → `main`.
 
 ### 2026-05-08 12:00 - Stage 1 Process State Management Module
 **Agent:** codebase
