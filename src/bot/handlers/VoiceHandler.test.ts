@@ -106,7 +106,7 @@ describe("registerVoiceHandler", () => {
     await vi.advanceTimersByTimeAsync(1);
 
     expect(ctx.telegram.getFileLink).toHaveBeenCalledWith("voice1");
-    expect(mockTranscribeVoice).toHaveBeenCalledWith("https://example.com/voice.ogg");
+    expect(mockTranscribeVoice).toHaveBeenCalledWith("https://example.com/voice.ogg", undefined);
     expect(mockSendMessage).toHaveBeenCalledWith(
       "sess-1",
       "User sent a voice message. Transcription: hello world"

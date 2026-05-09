@@ -92,10 +92,27 @@ describe("runWhisper", () => {
     mockSpawnAsync.mockReset();
   });
 
-  it("returns trimmed stdout on success", async () => {
+  it("returns trimmed stdout on success without language", async () => {
     mockSpawnAsync.mockResolvedValue({ stdout: "  hello world  \n", stderr: "", exitCode: 0 });
     const result = await runWhisper({ binaryPath: "/bin/whisper", modelPath: "/model.bin" }, "/audio.wav");
     expect(result).toBe("hello world");
+    expect(mockSpawnAsync).toHaveBeenCalledWith("/bin/whisper", [
+      "-m",
+      "/model.bin",
+      "-f",
+      "/audio.wav",
+      "-nt",
+    ]);
+  });
+
+  it("passes language flag when specified", async () => {
+    mockSpawnAsync.mockResolvedValue({ stdout: "ciao mondo", stderr: "", exitCode: 0 });
+    const result = await runWhisper(
+      { binaryPath: "/bin/whisper", modelPath: "/model.bin" },
+      "/audio.wav",
+      "it"
+    );
+    expect(result).toBe("ciao mondo");
     expect(mockSpawnAsync).toHaveBeenCalledWith("/bin/whisper", [
       "-m",
       "/model.bin",

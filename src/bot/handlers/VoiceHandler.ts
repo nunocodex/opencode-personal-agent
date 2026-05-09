@@ -21,7 +21,7 @@ export function registerVoiceHandler(bot: any, store: SessionStore): void {
 
     try {
       const fileLink = await ctx.telegram.getFileLink(voice.file_id);
-      const text = await transcribeVoice(fileLink.href);
+      const text = await transcribeVoice(fileLink.href, botConfig.whisperLanguage);
 
       let prompt: string;
       const caption = (ctx.message as any)?.caption ?? "";

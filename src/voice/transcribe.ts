@@ -26,17 +26,21 @@ export async function runFfmpeg(inputPath: string, outputPath: string): Promise<
 
 export async function runWhisper(
   assets: WhisperAssets,
-  wavPath: string
+  wavPath: string,
+  language?: string
 ): Promise<string> {
-  const result = await spawnAsync(assets.binaryPath, [
+  const args = [
     "-m",
     assets.modelPath,
     "-f",
     wavPath,
     "-nt",
-    "-l",
-    "it",
-  ]);
+  ];
+  if (language) {
+    args.push("-l", language);
+  }
+
+  const result = await spawnAsync(assets.binaryPath, args);
 
   if (result.exitCode !== 0) {
     throw new Error(`whisper failed: ${result.stderr || result.stdout}`);
@@ -52,7 +56,7 @@ export async function runWhisper(
     .trim();
 }
 
-export async function transcribeVoice(fileUrl: string): Promise<string> {
+export async function transcribeVoice(fileUrl: string, language?: string): Promise<string> {
   const tempDir = resolve(process.cwd(), "data", "temp");
   if (!existsSync(tempDir)) {
     mkdirSync(tempDir, { recursive: true });
@@ -76,7 +80,7 @@ export async function transcribeVoice(fileUrl: string): Promise<string> {
     await runFfmpeg(oggPath, wavPath);
 
     const assets = await warmupWhisperAssets();
-    const text = await runWhisper(assets, wavPath);
+    const text = await runWhisper(assets, wavPath, language);
 
     return text;
   } finally {
