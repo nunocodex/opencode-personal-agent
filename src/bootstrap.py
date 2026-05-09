@@ -26,7 +26,7 @@ def _check_opencode_in_path() -> None:
 
 
 def _ensure_storage_dirs() -> None:
-    for sub in ("logs", "models", "temp"):
+    for sub in ("logs", "models", "temp", "uploads"):
         Path("storage", sub).mkdir(parents=True, exist_ok=True)
 
 

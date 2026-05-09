@@ -196,13 +196,14 @@ class BotHandlers:
         typing = self._typing_task(update)
         try:
             file = await context.bot.get_file(largest.file_id)
-            temp_path = safe_path(file_name, Path("storage/temp"))
-            await file.download_to_drive(str(temp_path))
+            file_path = safe_path(file_name, Path("storage/uploads"))
+            await file.download_to_drive(str(file_path))
 
+            unix_path = file_path.as_posix()
             prompt = (
-                f"User: {caption}\n\nLook at the image at {temp_path} and act on the user's request."
+                f"User: {caption}\n\nLook at the image at {unix_path} and act on the user's request."
                 if caption
-                else f"User sent an image: {file_name}\n\nLook at the image at {temp_path} and describe what you see."
+                else f"User sent an image: {file_name}\n\nLook at the image at {unix_path} and describe what you see."
             )
 
             session_id = await self._get_or_create_session(chat_id)
@@ -222,7 +223,7 @@ class BotHandlers:
             )
         finally:
             with contextlib.suppress(Exception):
-                temp_path.unlink(missing_ok=True)
+                file_path.unlink(missing_ok=True)
 
     # ------------------------------------------------------------------
     # Document
@@ -254,13 +255,14 @@ class BotHandlers:
         typing = self._typing_task(update)
         try:
             file = await context.bot.get_file(doc.file_id)
-            temp_path = safe_path(safe_name, Path("storage/temp"))
-            await file.download_to_drive(str(temp_path))
+            file_path = safe_path(safe_name, Path("storage/uploads"))
+            await file.download_to_drive(str(file_path))
 
+            unix_path = file_path.as_posix()
             prompt = (
-                f"User: {caption}\n\nRead the file at {temp_path} and act on the user's request."
+                f"User: {caption}\n\nRead the file at {unix_path} and act on the user's request."
                 if caption
-                else f"User sent a file: {safe_name}\n\nRead the file at {temp_path} and do what seems appropriate."
+                else f"User sent a file: {safe_name}\n\nRead the file at {unix_path} and do what seems appropriate."
             )
 
             session_id = await self._get_or_create_session(chat_id)
@@ -280,7 +282,7 @@ class BotHandlers:
             )
         finally:
             with contextlib.suppress(Exception):
-                temp_path.unlink(missing_ok=True)
+                file_path.unlink(missing_ok=True)
 
     # ------------------------------------------------------------------
     # Voice
@@ -301,10 +303,10 @@ class BotHandlers:
         typing = self._typing_task(update)
         try:
             file = await context.bot.get_file(voice.file_id)
-            temp_path = safe_path(file_name, Path("storage/temp"))
-            await file.download_to_drive(str(temp_path))
+            file_path = safe_path(file_name, Path("storage/uploads"))
+            await file.download_to_drive(str(file_path))
 
-            text = self.transcriber.transcribe(str(temp_path), self.config.whisper_language)
+            text = self.transcriber.transcribe(str(file_path), self.config.whisper_language)
 
             prompt = (
                 f"User: {caption}\n\nTranscription of voice message: {text}"
@@ -329,4 +331,4 @@ class BotHandlers:
             )
         finally:
             with contextlib.suppress(Exception):
-                temp_path.unlink(missing_ok=True)
+                file_path.unlink(missing_ok=True)
