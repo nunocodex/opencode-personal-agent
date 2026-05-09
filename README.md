@@ -10,17 +10,23 @@ User (Telegram)
        v
 Telegram Bot  ------>  ProcessManager  ------>  opencode serve CLI
    (telegraf)            (lifecycle)            (child process)
-                              |                        |
-                              v                        v
-                        ProcessStateStore          HTTP API
-                        (data/process-state.json)   (/global/health)
+      |                         |                        |
+      |                         v                        v
+      |                   ProcessStateStore          HTTP API
+      |                   (data/process-state.json)   (/global/health)
+      |
+      v
+EventScheduler  <----->  EventStore
+(1s tick loop)          (data/events.json)
 ```
 
 **Data flow:**
 1. User sends a message or command via Telegram
 2. `TelegramBot` routes commands to `CommandHandler` and chat messages to the OpenCode HTTP API
-3. `ProcessManager` starts, stops, monitors, and restarts the `opencode serve` child process
-4. `ProcessStateStore` persists process status to `./data/process-state.json` for observability and crash recovery
+3. OpenCode can generate `[SCHEDULE]` blocks in responses → `EventScheduler` creates reminders
+4. `ProcessManager` starts, stops, monitors, and restarts the `opencode serve` child process
+5. `ProcessStateStore` persists process status to `./data/process-state.json` for observability and crash recovery
+6. `EventStore` persists scheduled events to `./data/events.json` for crash recovery
 
 ## Features
 
@@ -31,6 +37,9 @@ Telegram Bot  ------>  ProcessManager  ------>  opencode serve CLI
 - **Graceful shutdown** — SIGTERM → SIGKILL escalation with Windows `taskkill` fallback
 - **State persistence** — process status, PID, uptime, and failure counts saved to disk
 - **Session management** — per-chat sessions with `/new` to reset conversations
+- **Voice messages** — local transcription via whisper.cpp + ffmpeg (Italian/multilingual)
+- **Scheduled events** — reminders and recurring messages via natural language (`ricordami tra 5 minuti`)
+- **Event persistence** — scheduled events survive crashes and resume on restart
 
 ## Environment Variables
 
@@ -109,7 +118,7 @@ npm run dev
 | `npm run build` | Compile TypeScript (`src/` → `dist/`) |
 | `npm run dev` | Watch mode (`tsc --watch`) |
 | `npm start` | Run compiled CLI entry point |
-| `npm test` | Run the Vitest test suite (10 tests covering `ProcessStateStore` and `ProcessManager`) |
+| `npm test` | Run the Vitest test suite (199 tests across 21 files, 88%+ coverage) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:coverage` | Run tests with coverage report |
 
@@ -155,8 +164,17 @@ taskkill /PID <PID> /F
 ├── src/
 │   ├── bot/
 │   │   ├── TelegramBot.ts          # Bot initialization and lifecycle
-│   │   └── handlers/
-│   │       └── CommandHandler.ts   # /start, /status, /restart, etc.
+│   │   ├── SessionStore.ts         # Per-chat session persistence
+│   │   ├── handlers/
+│   │   │   ├── CommandHandler.ts   # /start, /status, /restart, etc.
+│   │   │   ├── TextHandler.ts      # Text messages → OpenCode API
+│   │   │   ├── DocumentHandler.ts  # Documents → OpenCode API
+│   │   │   ├── PhotoHandler.ts     # Photos → OpenCode API
+│   │   │   └── VoiceHandler.ts     # Voice messages → transcription → OpenCode
+│   │   └── utils/
+│   │       ├── sendReply.ts        # Reply chunking, file attachments
+│   │       ├── parseScheduleBlocks.ts
+│   │       └── processScheduleBlocks.ts
 │   ├── config/
 │   │   └── bot.config.ts           # Environment variable parsing
 │   ├── opencode/
@@ -165,11 +183,20 @@ taskkill /PID <PID> /F
 │   ├── process/
 │   │   ├── ProcessManager.ts       # Child process lifecycle manager
 │   │   └── ProcessStateStore.ts    # JSON-backed state persistence
-│   ├── SessionStore.ts             # Per-chat session persistence
+│   ├── scheduler/
+│   │   ├── EventScheduler.ts       # 1s tick loop, retry, graceful shutdown
+│   │   ├── EventStore.ts           # Atomic JSON persistence for events
+│   │   ├── scheduleParser.ts       # Cron/daily/weekly/interval parser
+│   │   ├── timeParser.ts           # Relative/absolute time parser
+│   │   └── executeEvent.ts         # Telegram message delivery
+│   ├── voice/
+│   │   ├── spawnAsync.ts           # Async spawn with timeout/cancellation
+│   │   ├── assets.ts               # Whisper binary/model download
+│   │   └── transcribe.ts           # ffmpeg OGG→WAV → whisper transcription
 │   └── index.ts                    # CLI entry point
 ├── dist/                           # Compiled output
 ├── docs/                           # Documentation
-├── data/                           # Runtime data (process-state.json)
+├── data/                           # Runtime data (process-state.json, events.json)
 ├── .opencode/                      # Agent configs, commands, skills
 ├── .env                            # Environment variables (not in git)
 ├── opencode.json                   # OpenCode CLI configuration
