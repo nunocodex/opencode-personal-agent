@@ -264,4 +264,37 @@ describe("registerPhotoHandler", () => {
       { reply_to_message_id: 42 }
     );
   });
+
+  it("processes schedule blocks when scheduler is provided", async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      body: { some: "body" },
+    });
+    mockFromWeb.mockReturnValue({ pipe: vi.fn() });
+    mockPipeline.mockResolvedValue(undefined);
+    store.get.mockReturnValue({
+      sessionId: "sess-1",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    });
+    mockSendMessage.mockResolvedValue({
+      text: "Response\n[SCHEDULE]\nin 5 minutes\nRemind me\n[/SCHEDULE]",
+    });
+
+    const mockScheduler = {
+      schedule: vi.fn().mockReturnValue("evt-1"),
+      cancel: vi.fn().mockReturnValue(false),
+      list: vi.fn().mockReturnValue([]),
+    };
+
+    registerPhotoHandler(bot, store, mockScheduler as any);
+    const handler = getHandler(bot);
+    const ctx = createMockCtx();
+    await handler(ctx);
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(mockScheduler.schedule).toHaveBeenCalledWith("123456", expect.any(Date), "Remind me");
+    expect(mockSendReply).toHaveBeenCalledWith(ctx, "Response", 42);
+  });
 });

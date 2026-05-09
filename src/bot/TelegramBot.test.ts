@@ -38,6 +38,21 @@ vi.mock("../process/ProcessManager.js", () => ({
   }),
 }));
 
+const mockEsStart = vi.fn();
+const mockEsStop = vi.fn();
+
+vi.mock("../scheduler/EventScheduler.js", () => ({
+  EventScheduler: vi.fn().mockImplementation(function () {
+    return {
+      start: mockEsStart,
+      stop: mockEsStop,
+      schedule: vi.fn(),
+      cancel: vi.fn(),
+      list: vi.fn().mockReturnValue([]),
+    };
+  }),
+}));
+
 const mockBotLaunch = vi.fn();
 const mockBotStop = vi.fn();
 const mockBotUse = vi.fn();
@@ -148,13 +163,14 @@ describe("TelegramBot", () => {
   });
 
   describe("shutdown handlers", () => {
-    it("SIGINT calls pm.stop() and bot.stop('SIGINT')", async () => {
+    it("SIGINT calls es.stop(), pm.stop() and bot.stop('SIGINT')", async () => {
       await startBot();
       const sigintListener = process.listeners("SIGINT")[0];
       expect(sigintListener).toBeDefined();
       sigintListener("SIGINT");
       await Promise.resolve();
       await Promise.resolve();
+      expect(mockEsStop).toHaveBeenCalledTimes(1);
       expect(mockPmStop).toHaveBeenCalledTimes(1);
       expect(mockBotStop).toHaveBeenCalledWith("SIGINT");
     });

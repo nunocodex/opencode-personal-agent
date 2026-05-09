@@ -8,8 +8,10 @@ import { registerPhotoHandler } from "./handlers/PhotoHandler.js";
 import { registerVoiceHandler } from "./handlers/VoiceHandler.js";
 import { botConfig } from "../config/bot.config.js";
 import { killAllSpawnedProcesses } from "../voice/spawnAsync.js";
+import { EventScheduler } from "../scheduler/EventScheduler.js";
 
 export let processManager: ProcessManager | null = null;
+export let eventScheduler: EventScheduler | null = null;
 
 export async function startBot(): Promise<void> {
   const token = botConfig.telegramBotToken;
@@ -36,6 +38,17 @@ export async function startBot(): Promise<void> {
 
   const bot = new Telegraf(token, { handlerTimeout: 900_000 });
 
+  eventScheduler = new EventScheduler({
+    onExecute: async (event) => {
+      try {
+        await bot.telegram.sendMessage(event.chatId, event.what);
+      } catch (err) {
+        console.error(`[scheduler] failed to send to ${event.chatId}:`, err);
+      }
+    },
+  });
+  eventScheduler.start();
+
   // Auth middleware
   bot.use(async (ctx: Context, next) => {
     const chatId = ctx.chat?.id.toString();
@@ -49,10 +62,10 @@ export async function startBot(): Promise<void> {
   });
 
   registerCommandHandlers(bot, store, processManager);
-  registerTextHandler(bot, store);
-  registerDocumentHandler(bot, store);
-  registerPhotoHandler(bot, store);
-  registerVoiceHandler(bot, store);
+  registerTextHandler(bot, store, eventScheduler);
+  registerDocumentHandler(bot, store, eventScheduler);
+  registerPhotoHandler(bot, store, eventScheduler);
+  registerVoiceHandler(bot, store, eventScheduler);
 
   bot.launch();
   console.log("Telegram bot started. Press Ctrl+C to stop.");
@@ -65,6 +78,9 @@ export async function startBot(): Promise<void> {
     }
     shutdownInProgress = true;
     console.log(`\n[bot] received ${signal}, shutting down...`);
+    if (eventScheduler) {
+      eventScheduler.stop();
+    }
     if (processManager) {
       await processManager.stop();
     }

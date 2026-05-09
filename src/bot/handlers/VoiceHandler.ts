@@ -5,8 +5,10 @@ import { createSession, sendMessage } from "../../opencode/Client.js";
 import { sendReply } from "../utils/sendReply.js";
 import { botConfig } from "../../config/bot.config.js";
 import { transcribeVoice } from "../../voice/transcribe.js";
+import { processScheduleBlocks } from "../utils/processScheduleBlocks.js";
+import type { EventScheduler } from "../../scheduler/EventScheduler.js";
 
-export function registerVoiceHandler(bot: any, store: SessionStore): void {
+export function registerVoiceHandler(bot: any, store: SessionStore, scheduler?: EventScheduler): void {
   bot.on(message("voice"), async (ctx: Context) => {
     const chatId = ctx.chat?.id.toString();
     const voice = (ctx.message as any)?.voice;
@@ -41,7 +43,13 @@ export function registerVoiceHandler(bot: any, store: SessionStore): void {
       const response = await sendMessage(sessionEntry.sessionId, prompt);
       clearInterval(typingInterval);
 
-      await sendReply(ctx, response.text ?? "(no response)", ctx.message?.message_id);
+      let responseText = response.text ?? "(no response)";
+      if (scheduler) {
+        const { cleanText } = processScheduleBlocks(chatId, responseText, scheduler);
+        responseText = cleanText || "(no response)";
+      }
+
+      await sendReply(ctx, responseText, ctx.message?.message_id);
     } catch (err) {
       clearInterval(typingInterval);
       const errorMessage = err instanceof Error ? err.message : String(err);

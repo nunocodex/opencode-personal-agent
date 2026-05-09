@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { config } from "dotenv";
 import { resolve } from "path";
-import { startBot, processManager } from "./bot/TelegramBot.js";
+import { startBot, processManager, eventScheduler } from "./bot/TelegramBot.js";
 
 // Load .env
 config({ path: resolve(process.cwd(), ".env"), override: true });
@@ -21,6 +21,9 @@ async function main(): Promise<void> {
 main().catch(async (err) => {
   console.error("Fatal error:", err);
   try {
+    if (eventScheduler) {
+      eventScheduler.stop();
+    }
     if (processManager) {
       await processManager.stop();
     }

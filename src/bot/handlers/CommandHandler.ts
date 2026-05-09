@@ -32,7 +32,8 @@ export function registerCommandHandlers(bot: any, store: SessionStore, processMa
         "/status - Show server status\n" +
         "/restart - Restart the OpenCode server\n" +
         "/help - Show available commands\n\n" +
-        "You can also send voice messages."
+        "You can also send voice messages.\n\n" +
+        "The AI can schedule reminders and tasks for you automatically."
     );
   });
 
@@ -44,7 +45,8 @@ export function registerCommandHandlers(bot: any, store: SessionStore, processMa
         "/status - Show server status\n" +
         "/restart - Restart the OpenCode server\n" +
         "/help - This message\n\n" +
-        "You can also send text, documents, photos, and voice messages.",
+        "You can also send text, documents, photos, and voice messages.\n\n" +
+        "_The AI can schedule reminders and tasks for you automatically._",
       { parse_mode: "Markdown" }
     );
   });
