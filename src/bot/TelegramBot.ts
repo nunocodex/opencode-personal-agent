@@ -5,7 +5,9 @@ import { registerCommandHandlers } from "./handlers/CommandHandler.js";
 import { registerTextHandler } from "./handlers/TextHandler.js";
 import { registerDocumentHandler } from "./handlers/DocumentHandler.js";
 import { registerPhotoHandler } from "./handlers/PhotoHandler.js";
+import { registerVoiceHandler } from "./handlers/VoiceHandler.js";
 import { botConfig } from "../config/bot.config.js";
+import { killAllSpawnedProcesses } from "../voice/spawnAsync.js";
 
 export let processManager: ProcessManager | null = null;
 
@@ -50,6 +52,7 @@ export async function startBot(): Promise<void> {
   registerTextHandler(bot, store);
   registerDocumentHandler(bot, store);
   registerPhotoHandler(bot, store);
+  registerVoiceHandler(bot, store);
 
   bot.launch();
   console.log("Telegram bot started. Press Ctrl+C to stop.");
@@ -65,6 +68,7 @@ export async function startBot(): Promise<void> {
     if (processManager) {
       await processManager.stop();
     }
+    killAllSpawnedProcesses();
     bot.stop(signal);
   };
 
