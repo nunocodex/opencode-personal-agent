@@ -125,7 +125,10 @@ class TestBotHandlers:
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
         handlers.client.send_message = AsyncMock(return_value="response")
-        with patch("builtins.open", mock_open(read_data=b"fake_img")), \
+        # Mock file stat, open, and base64 to avoid touching the filesystem
+        fake_stat = MagicMock(st_size=100)
+        with patch("pathlib.Path.stat", return_value=fake_stat), \
+             patch("builtins.open", mock_open(read_data=b"fake_img")), \
              patch("base64.b64encode", return_value=b"ZmFrZV9pbWc="):
             await handlers.on_photo(mock_update, mock_context)
         handlers.client.send_message.assert_awaited_once()
