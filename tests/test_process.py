@@ -17,6 +17,7 @@ class DummyProcess:
     def __init__(self, returncode: int | None = None) -> None:
         self.returncode = returncode
         self._killed = False
+        self._terminated = False
         self.stdout = None
         self.stderr = None
 
@@ -24,6 +25,10 @@ class DummyProcess:
         while self.returncode is None:
             await asyncio.sleep(0.01)
         return self.returncode or 0
+
+    def terminate(self) -> None:
+        self._terminated = True
+        self.returncode = 0
 
     def kill(self) -> None:
         self._killed = True
@@ -80,7 +85,7 @@ class TestProcessManager:
         pm._process = dummy
         pm._start_time = asyncio.get_event_loop().time()
         await pm.stop()
-        assert dummy._killed
+        assert dummy._terminated or dummy._killed
         assert pm._process is None
 
     async def test_restart(self, pm: ProcessManager) -> None:

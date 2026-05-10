@@ -87,7 +87,7 @@ class ProcessManager:
 
         try:
             if sys.platform == "win32":
-                self._process.send_signal(signal.CTRL_BREAK_EVENT)  # type: ignore[attr-defined]
+                self._process.terminate()
             else:
                 self._process.send_signal(signal.SIGTERM)
         except ProcessLookupError:
@@ -96,7 +96,7 @@ class ProcessManager:
         try:
             await asyncio.wait_for(self._process.wait(), timeout=5.0)
         except asyncio.TimeoutError:
-            print("[ProcessManager] SIGTERM timeout, escalating to SIGKILL")
+            print("[ProcessManager] terminate/SIGTERM timeout, escalating to SIGKILL")
             try:
                 self._process.kill()
                 await asyncio.wait_for(self._process.wait(), timeout=2.0)
