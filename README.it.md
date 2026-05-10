@@ -4,6 +4,15 @@
 
 > Interfaccia Telegram per [OpenCode](https://opencode.ai). Ricevi messaggi su Telegram, inoltrali ad agenti OpenCode, ottieni risposte.
 
+## ✨ Funzionalità
+
+- **5 comandi:** `/start`, `/help`, `/new`, `/status`, `/restart`
+- **4 tipi di messaggio:** testo, foto, documento, vocali
+- **Trascrizione vocale 100% locale** con `faster-whisper` (CPU, int8)
+- **Ciclo di vita asincrono** — avvia/ferma/riavvia `opencode serve`
+- **Sicurezza prima di tutto** — protezione path traversal, blocklist file sensibili, autenticazione singolo utente
+- **68 test, 84% copertura**
+
 ## 🚀 Avvio Rapido
 
 ```bash

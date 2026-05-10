@@ -35,6 +35,7 @@ async def start_bot() -> None:
     signal.signal(signal.SIGTERM, _signal_handler)
 
     await app.initialize()
+    await app.updater.start_polling()
     await app.start()
     print("Telegram bot started. Press Ctrl+C to stop.")
 
@@ -42,6 +43,7 @@ async def start_bot() -> None:
     await shutdown_event.wait()
 
     print("[main] stopping bot...")
+    await app.updater.stop()
     await app.stop()
     await app.shutdown()
     await pm.stop()

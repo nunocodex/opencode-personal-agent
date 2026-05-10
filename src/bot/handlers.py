@@ -33,6 +33,20 @@ class BotHandlers:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    async def _check_auth(self, update: Update) -> bool:
+        """Check if the user is authorized. Replies and returns False if not."""
+        chat = update.effective_chat
+        if chat is None:
+            return False
+        if chat.id != self.config.allowed_chat_id:
+            if update.effective_message:
+                await update.effective_message.reply_text(
+                    "Access denied. Your chat ID is not authorized."
+                )
+            print(f"[auth] unauthorized access from {chat.id}")
+            return False
+        return True
+
     async def _get_or_create_session(self, chat_id: int) -> str:
         session_id = self.store.get(chat_id)
         if session_id is None:
@@ -57,6 +71,8 @@ class BotHandlers:
     async def cmd_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
             return
+        if not await self._check_auth(update):
+            return
         await update.effective_message.reply_text(
             "Welcome to OpenCode Agents Bot!\n\n"
             "I am powered by OpenCode and connect you to AI agents.\n"
@@ -72,6 +88,8 @@ class BotHandlers:
     async def cmd_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
             return
+        if not await self._check_auth(update):
+            return
         await update.effective_message.reply_text(
             "*Available Commands*\n\n"
             "/start - Welcome message\n"
@@ -86,6 +104,8 @@ class BotHandlers:
     async def cmd_new(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message or update.effective_chat is None:
             return
+        if not await self._check_auth(update):
+            return
         chat_id = update.effective_chat.id
         existing = self.store.get(chat_id)
         if existing:
@@ -99,6 +119,8 @@ class BotHandlers:
     async def cmd_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
             return
+        if not await self._check_auth(update):
+            return
         uptime = self.pm.uptime_seconds()
         uptime_str = f"{int(uptime // 60)}m {int(uptime % 60)}s" if uptime is not None else "N/A"
         healthy = await self.pm.is_healthy()
@@ -110,6 +132,8 @@ class BotHandlers:
 
     async def cmd_restart(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
+            return
+        if not await self._check_auth(update):
             return
         await update.effective_message.reply_text("Restarting OpenCode server...")
         try:
@@ -123,6 +147,8 @@ class BotHandlers:
     # ------------------------------------------------------------------
     async def on_text(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message or update.effective_chat is None:
+            return
+        if not await self._check_auth(update):
             return
         chat_id = update.effective_chat.id
         text = update.effective_message.text or ""
@@ -139,11 +165,7 @@ class BotHandlers:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
-            await send_reply(
-                update,
-                response,
-                reply_to_message_id=update.effective_message.message_id,
-            )
+            await send_reply(update, response)
         except Exception as exc:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -151,7 +173,7 @@ class BotHandlers:
             print(f"[bot] error processing text from {chat_id}: {exc}")
             await update.effective_message.reply_text(
                 "Sorry, I encountered an error processing your request.",
-                reply_to_message_id=update.effective_message.message_id,
+                do_quote=True,
             )
 
     # ------------------------------------------------------------------
@@ -159,6 +181,8 @@ class BotHandlers:
     # ------------------------------------------------------------------
     async def on_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message or update.effective_chat is None or not context.bot:
+            return
+        if not await self._check_auth(update):
             return
         chat_id = update.effective_chat.id
         photos = update.effective_message.photo
@@ -186,11 +210,7 @@ class BotHandlers:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
-            await send_reply(
-                update,
-                response,
-                reply_to_message_id=update.effective_message.message_id,
-            )
+            await send_reply(update, response)
         except Exception as exc:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -198,14 +218,19 @@ class BotHandlers:
             print(f"[bot] error processing photo from {chat_id}: {exc}")
             await update.effective_message.reply_text(
                 "Sorry, I failed to process the photo.",
-                reply_to_message_id=update.effective_message.message_id,
+                do_quote=True,
             )
+        finally:
+            with contextlib.suppress(Exception):
+                temp_path.unlink(missing_ok=True)
 
     # ------------------------------------------------------------------
     # Document
     # ------------------------------------------------------------------
     async def on_document(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message or update.effective_chat is None or not context.bot:
+            return
+        if not await self._check_auth(update):
             return
         chat_id = update.effective_chat.id
         doc = update.effective_message.document
@@ -214,6 +239,14 @@ class BotHandlers:
         raw_name = doc.file_name or "document"
         safe_name = re.sub(r'[\\/]', "_", raw_name)
         safe_name = re.sub(r'\.{2,}', "_", safe_name)
+        # Block Windows-reserved characters and names
+        safe_name = re.sub(r'[:*?"<>|]', "_", safe_name)
+        stem, dot, ext = safe_name.partition(".")
+        reserved = {"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
+                     "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
+                     "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
+        if stem.upper() in reserved:
+            safe_name = f"_{safe_name}"
         safe_name = safe_name or f"file_{int(time.time())}"
         caption = update.effective_message.caption or ""
 
@@ -235,11 +268,7 @@ class BotHandlers:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
-            await send_reply(
-                update,
-                response,
-                reply_to_message_id=update.effective_message.message_id,
-            )
+            await send_reply(update, response)
         except Exception as exc:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -247,14 +276,19 @@ class BotHandlers:
             print(f"[bot] error processing document from {chat_id}: {exc}")
             await update.effective_message.reply_text(
                 "Sorry, I failed to process the document.",
-                reply_to_message_id=update.effective_message.message_id,
+                do_quote=True,
             )
+        finally:
+            with contextlib.suppress(Exception):
+                temp_path.unlink(missing_ok=True)
 
     # ------------------------------------------------------------------
     # Voice
     # ------------------------------------------------------------------
     async def on_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message or update.effective_chat is None or not context.bot:
+            return
+        if not await self._check_auth(update):
             return
         chat_id = update.effective_chat.id
         voice = update.effective_message.voice
@@ -283,11 +317,7 @@ class BotHandlers:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
-            await send_reply(
-                update,
-                response,
-                reply_to_message_id=update.effective_message.message_id,
-            )
+            await send_reply(update, response)
         except Exception as exc:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -295,5 +325,8 @@ class BotHandlers:
             print(f"[bot] error processing voice from {chat_id}: {exc}")
             await update.effective_message.reply_text(
                 "Sorry, I failed to process the voice message.",
-                reply_to_message_id=update.effective_message.message_id,
+                do_quote=True,
             )
+        finally:
+            with contextlib.suppress(Exception):
+                temp_path.unlink(missing_ok=True)

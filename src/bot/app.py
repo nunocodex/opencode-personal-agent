@@ -1,16 +1,12 @@
-"""PTB Application setup with auth middleware and graceful shutdown."""
+"""PTB Application setup with per-handler auth and graceful shutdown."""
 from __future__ import annotations
 
-import asyncio
-import signal
 import sys
 from pathlib import Path
 
-from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
-    ContextTypes,
     MessageHandler,
     filters,
 )
@@ -27,23 +23,6 @@ from bot.handlers import BotHandlers
 from bot.session import SessionStore
 
 
-async def _auth_middleware(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    allowed_chat_id: int,
-) -> bool:
-    """Return True if authorized, else reply and return False."""
-    chat = update.effective_chat
-    if chat is None:
-        return False
-    if chat.id != allowed_chat_id:
-        if update.effective_message:
-            await update.effective_message.reply_text("Access denied. Your chat ID is not authorized.")
-        print(f"[auth] unauthorized access from {chat.id}")
-        return False
-    return True
-
-
 def build_app(config: Config, process_manager: ProcessManager) -> Application:
     store = SessionStore()
     handlers = BotHandlers(config, store, process_manager)
@@ -53,12 +32,6 @@ def build_app(config: Config, process_manager: ProcessManager) -> Application:
         .token(config.telegram_bot_token)
         .build()
     )
-
-    # Auth wrapper
-    async def auth_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        await _auth_middleware(update, context, config.allowed_chat_id)
-
-    app.add_handler(MessageHandler(filters.ALL, auth_check), group=-1)
 
     # Commands
     app.add_handler(CommandHandler("start", handlers.cmd_start))

@@ -25,6 +25,11 @@ class TestMain:
                     app.start = AsyncMock()
                     app.stop = AsyncMock()
                     app.shutdown = AsyncMock()
+                    # Updater mock
+                    updater = MagicMock()
+                    updater.start_polling = AsyncMock()
+                    updater.stop = AsyncMock()
+                    app.updater = updater
                     mock_build_app.return_value = app
                     with patch("main.signal.signal"):
                         with patch("main.asyncio.Event", return_value=event):
@@ -35,7 +40,9 @@ class TestMain:
         pm.start.assert_awaited_once()
         pm.stop.assert_awaited_once()
         app.initialize.assert_awaited_once()
+        app.updater.start_polling.assert_awaited_once()
         app.start.assert_awaited_once()
+        app.updater.stop.assert_awaited_once()
         app.stop.assert_awaited_once()
         app.shutdown.assert_awaited_once()
 

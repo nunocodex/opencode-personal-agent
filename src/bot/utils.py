@@ -11,17 +11,16 @@ from telegram.ext import ContextTypes
 async def send_reply(
     update: Update,
     text: str,
-    reply_to_message_id: int | None = None,
     context: ContextTypes.DEFAULT_TYPE | None = None,
 ) -> None:
-    """Send a reply, splitting into chunks if text exceeds Telegram limit."""
+    """Send a reply, quoting the original message. Splits into chunks if text exceeds Telegram limit."""
     if not update.effective_message:
         return
     MAX_LEN = 4096
     if len(text) <= MAX_LEN:
         await update.effective_message.reply_text(
             text,
-            reply_to_message_id=reply_to_message_id,
+            do_quote=True,
         )
         return
 
@@ -44,6 +43,6 @@ async def send_reply(
     for idx, chunk in enumerate(chunks):
         await update.effective_message.reply_text(
             chunk,
-            reply_to_message_id=reply_to_message_id if idx == 0 else None,
+            do_quote=(idx == 0),
         )
         await asyncio.sleep(0.3)

@@ -99,8 +99,7 @@ Tutta la logica del bot:
 Store sessioni in memoria (`dict[int, str]`). Nessuna persistenza.
 
 ### `src/bot/utils.py`
-- `send_reply()` — divide messaggi >4096 caratteri
-- Gestisce marcatori `[SEND_FILE:path]` nelle risposte
+- `send_reply()` — divide messaggi >4096 caratteri (primo chunk quota il messaggio originale)
 
 ### `src/opencode/client.py`
 Client HTTP asincrono per API OpenCode:
