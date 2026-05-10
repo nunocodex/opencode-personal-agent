@@ -106,9 +106,11 @@ class ProcessManager:
         self._process = None
         self._start_time = None
 
-        # Cancel pipe reader tasks
+        # Cancel pipe reader tasks and wait for them to finish
         for task in self._pipe_tasks:
             task.cancel()
+        if self._pipe_tasks:
+            await asyncio.gather(*self._pipe_tasks, return_exceptions=True)
         self._pipe_tasks = []
         print("[ProcessManager] stopped.")
 
