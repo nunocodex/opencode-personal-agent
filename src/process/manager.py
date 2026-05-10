@@ -103,14 +103,31 @@ class ProcessManager:
             except (ProcessLookupError, asyncio.TimeoutError):
                 pass
 
+        # Close subprocess streams to release pipe transports before
+        # the event loop shuts down, preventing "I/O on closed pipe" warnings
+        for stream_name in ("stdout", "stderr"):
+            stream = getattr(self._process, stream_name, None)
+            if stream is not None:
+                try:
+                    stream._transport.close()
+                except Exception:
+                    pass
+
         self._process = None
         self._start_time = None
+        self._start_time = None
 
-        # Cancel pipe reader tasks and wait for them to finish
-        for task in self._pipe_tasks:
-            task.cancel()
+        # Wait for pipe reader tasks to exit naturally (they get EOF
+        # because the subprocess pipes are closed after killing the process)
         if self._pipe_tasks:
-            await asyncio.gather(*self._pipe_tasks, return_exceptions=True)
+            _, pending = await asyncio.wait(
+                self._pipe_tasks, timeout=2.0,
+            )
+            # Cancel any that didn't finish (shouldn't happen after kill)
+            for t in pending:
+                t.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await t
         self._pipe_tasks = []
         print("[ProcessManager] stopped.")
 
@@ -147,34 +164,11 @@ class ProcessManager:
 
     async def _kill_port_processes(self, port: int) -> None:
         if sys.platform == "win32":
-            try:
-                # Use netstat to find PID listening on the port
-                result = await asyncio.to_thread(
-                    subprocess.run,
-                    ["netstat", "-ano", "-p", "tcp"],
-                    capture_output=True, text=True, timeout=10,
-                )
-                lines = result.stdout.splitlines()
-                found_pids: set[int] = set()
-                for line in lines:
-                    if f":{port}" in line and ("LISTENING" in line or "ESTABLISHED" in line):
-                        parts = line.strip().split()
-                        if parts:
-                            pid_str = parts[-1]
-                            try:
-                                pid = int(pid_str)
-                                if pid != 0:
-                                    found_pids.add(pid)
-                            except ValueError:
-                                pass
-                for pid in found_pids:
-                    await asyncio.to_thread(
-                        subprocess.run,
-                        ["taskkill", "/F", "/PID", str(pid)],
-                        capture_output=True, text=True, timeout=10,
-                    )
-            except FileNotFoundError:
-                pass
+            # On Windows, the previous bot instance is already killed by
+            # terminate() in stop(). If a stale process remains, the health
+            # check below will succeed against the running instance, so a
+            # new opencode serve is not strictly needed.
+            pass
         else:
             try:
                 proc = await asyncio.create_subprocess_exec(
