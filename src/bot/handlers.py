@@ -199,20 +199,28 @@ class BotHandlers:
             file = await context.bot.get_file(largest.file_id)
             file_path = safe_path(file_name, Path("storage/uploads"))
             await file.download_to_drive(str(file_path))
+            file_size = file_path.stat().st_size
+            print(f"[bot] photo downloaded: {file_size} bytes")
 
             # Read and base64-encode the image for vision-capable models
             with open(file_path, "rb") as f:
-                image_b64 = base64.b64encode(f.read()).decode()
-            data_uri = f"data:image/jpeg;base64,{image_b64}"
+                raw = f.read()
+            image_b64 = base64.b64encode(raw).decode()
+            b64_size = len(image_b64)
+            raw_size = len(raw)
+            print(f"[bot] photo encoded: raw={raw_size} bytes, base64={b64_size} bytes")
 
             prompt = (
-                f"@file-parser User: {caption}\n\nThe image is: {data_uri}\n\nLook at it and act on the user's request."
+                f"@file-parser User: {caption}\n\nThe image is: data:image/jpeg;base64,{image_b64}\n\nLook at it and act on the user's request."
                 if caption
-                else f"@file-parser User sent an image: {data_uri}\n\nLook at it and describe what you see."
+                else f"@file-parser User sent an image: data:image/jpeg;base64,{image_b64}\n\nLook at it and describe what you see."
             )
 
+            prompt_size = len(prompt)
+            print(f"[bot] sending photo prompt ({prompt_size} chars) to session...")
             session_id = await self._get_or_create_session(chat_id)
             response = await self.client.send_message(session_id, prompt)
+            print(f"[bot] photo response received ({len(response)} chars)")
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
@@ -221,7 +229,7 @@ class BotHandlers:
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
-            print(f"[bot] error processing photo from {chat_id}: {exc}")
+            print(f"[bot] error processing photo from {chat_id}: {type(exc).__name__}: {exc}")
             await update.effective_message.reply_text(
                 "Sorry, I failed to process the photo.",
                 do_quote=True,

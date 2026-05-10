@@ -44,36 +44,27 @@ class OpenCodeClient:
             raise ValueError("Created session response missing id")
         return str(session_id)
 
-    async def send_message(
-        self,
-        session_id: str,
-        text: str,
-        image_data: str | None = None,
-        image_mime: str = "image/jpeg",
-    ) -> str:
-        """Send a message with optional image data (base64-encoded)."""
-        parts: list[dict[str, Any]] = [{"type": "text", "text": text}]
-        if image_data:
-            parts.append({
-                "type": "image",
-                "data": image_data,
-                "mime": image_mime,
-            })
+    async def send_message(self, session_id: str, text: str) -> str:
+        text_preview = text[:200]
         url = f"{self.base_url}/session/{session_id}/message"
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 url,
                 headers=self._headers(),
-                json={"parts": parts},
-                timeout=120.0,
+                json={"parts": [{"type": "text", "text": text}]},
+                timeout=300.0,
             )
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            print(f"[opencode] send_message returned {resp.status_code}: {resp.text[:500]}")
+            resp.raise_for_status()
         data = resp.json()
         parts_resp = data.get("parts", [])
         response_text = ""
         for part in parts_resp:
             if isinstance(part, dict) and part.get("type") == "text" and isinstance(part.get("text"), str):
                 response_text += part["text"]
+        if not response_text:
+            print(f"[opencode] send_message: empty response for {text_preview}...")
         return response_text or "(no response)"
 
     async def delete_session(self, session_id: str) -> None:
