@@ -145,9 +145,34 @@ class ProcessManager:
 
     async def _kill_port_processes(self, port: int) -> None:
         if sys.platform == "win32":
-            # Best-effort via netstat / taskkill omitted for simplicity;
-            # rely on subsequent start failure if port remains occupied.
-            pass
+            try:
+                # Use netstat to find PID listening on the port
+                result = await asyncio.to_thread(
+                    subprocess.run,
+                    ["netstat", "-ano", "-p", "tcp"],
+                    capture_output=True, text=True, timeout=10,
+                )
+                lines = result.stdout.splitlines()
+                found_pids: set[int] = set()
+                for line in lines:
+                    if f":{port}" in line and ("LISTENING" in line or "ESTABLISHED" in line):
+                        parts = line.strip().split()
+                        if parts:
+                            pid_str = parts[-1]
+                            try:
+                                pid = int(pid_str)
+                                if pid != 0:
+                                    found_pids.add(pid)
+                            except ValueError:
+                                pass
+                for pid in found_pids:
+                    await asyncio.to_thread(
+                        subprocess.run,
+                        ["taskkill", "/F", "/PID", str(pid)],
+                        capture_output=True, text=True, timeout=10,
+                    )
+            except FileNotFoundError:
+                pass
         else:
             try:
                 proc = await asyncio.create_subprocess_exec(
