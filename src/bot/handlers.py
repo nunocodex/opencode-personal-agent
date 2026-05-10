@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import os
 import re
@@ -199,15 +200,20 @@ class BotHandlers:
             file_path = safe_path(file_name, Path("storage/uploads"))
             await file.download_to_drive(str(file_path))
 
-            unix_path = file_path.as_posix()
+            # Read and base64-encode the image for the API payload
+            with open(file_path, "rb") as f:
+                image_b64 = base64.b64encode(f.read()).decode()
+
             prompt = (
-                f"User: {caption}\n\nLook at the image at {unix_path} and act on the user's request."
+                f"User: {caption}\n\nLook at the attached image and act on the user's request."
                 if caption
-                else f"User sent an image: {file_name}\n\nLook at the image at {unix_path} and describe what you see."
+                else f"User sent an image. Look at the attached image and describe what you see."
             )
 
             session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(session_id, prompt)
+            response = await self.client.send_message(
+                session_id, prompt, image_data=image_b64,
+            )
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing

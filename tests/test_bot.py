@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 
@@ -125,7 +125,9 @@ class TestBotHandlers:
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
         handlers.client.send_message = AsyncMock(return_value="response")
-        await handlers.on_photo(mock_update, mock_context)
+        with patch("builtins.open", mock_open(read_data=b"fake_image_data")), \
+             patch("base64.b64encode", return_value=b"ZmFrZV9pbWFnZV9kYXRh"):
+            await handlers.on_photo(mock_update, mock_context)
         handlers.client.send_message.assert_awaited_once()
 
     async def test_on_document(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
