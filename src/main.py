@@ -34,20 +34,21 @@ async def start_bot() -> None:
     signal.signal(signal.SIGINT, _signal_handler)
     signal.signal(signal.SIGTERM, _signal_handler)
 
-    await app.initialize()
-    await app.updater.start_polling()
-    await app.start()
-    print("Telegram bot started. Press Ctrl+C to stop.")
+    try:
+        await app.initialize()
+        await app.updater.start_polling()
+        await app.start()
+        print("Telegram bot started. Press Ctrl+C to stop.")
 
-    # Block until signal
-    await shutdown_event.wait()
-
-    print("[main] stopping bot...")
-    await app.updater.stop()
-    await app.stop()
-    await app.shutdown()
-    await pm.stop()
-    print("[main] shutdown complete.")
+        # Block until signal
+        await shutdown_event.wait()
+    finally:
+        print("[main] stopping bot...")
+        await app.updater.stop()
+        await app.stop()
+        await app.shutdown()
+        await pm.stop()
+        print("[main] shutdown complete.")
 
 
 if __name__ == "__main__":

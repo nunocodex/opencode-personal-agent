@@ -21,6 +21,7 @@ class ProcessManager:
         self.config = config
         self._process: asyncio.subprocess.Process | None = None
         self._start_time: float | None = None
+        self._pipe_tasks: list[asyncio.Task[None]] = []
 
     async def start(self) -> None:
         if self._process is not None and self._process.returncode is None:
@@ -66,8 +67,10 @@ class ProcessManager:
         self._start_time = time.monotonic()
 
         # Pipe loggers
-        asyncio.create_task(self._pipe_stdout())
-        asyncio.create_task(self._pipe_stderr())
+        self._pipe_tasks = [
+            asyncio.create_task(self._pipe_stdout()),
+            asyncio.create_task(self._pipe_stderr()),
+        ]
 
         await asyncio.sleep(5)
         healthy = await self.is_healthy()
@@ -102,6 +105,11 @@ class ProcessManager:
 
         self._process = None
         self._start_time = None
+
+        # Cancel pipe reader tasks
+        for task in self._pipe_tasks:
+            task.cancel()
+        self._pipe_tasks = []
         print("[ProcessManager] stopped.")
 
     async def restart(self) -> None:
