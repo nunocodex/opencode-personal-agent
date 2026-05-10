@@ -34,6 +34,8 @@ storage/temp/*
 !storage/temp/.gitkeep
 storage/models/*
 !storage/models/.gitkeep
+storage/uploads/*
+!storage/uploads/.gitkeep
 
 # Coverage
 .coverage/
