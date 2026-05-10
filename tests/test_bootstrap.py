@@ -39,6 +39,7 @@ class TestBootstrapChecks:
         assert (tmp_path / "storage" / "logs").exists()
         assert (tmp_path / "storage" / "models").exists()
         assert (tmp_path / "storage" / "temp").exists()
+        assert (tmp_path / "storage" / "uploads").exists()
 
     def test_clean_temp(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.chdir(tmp_path)
