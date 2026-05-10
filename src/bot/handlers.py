@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import contextlib
 import os
 import re
@@ -200,20 +199,15 @@ class BotHandlers:
             file_path = safe_path(file_name, Path("storage/uploads"))
             await file.download_to_drive(str(file_path))
 
-            # Read and base64-encode the image for the API payload
-            with open(file_path, "rb") as f:
-                image_b64 = base64.b64encode(f.read()).decode()
-
+            unix_path = file_path.as_posix()
             prompt = (
-                f"User: {caption}\n\nLook at the attached image and act on the user's request."
+                f"@file-parser User: {caption}\n\nThe image is at {unix_path}. Look at it and act on the user's request."
                 if caption
-                else f"User sent an image. Look at the attached image and describe what you see."
+                else f"@file-parser User sent an image at {unix_path}. Look at it and describe what you see."
             )
 
             session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(
-                session_id, prompt, image_data=image_b64,
-            )
+            response = await self.client.send_message(session_id, prompt)
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
@@ -266,9 +260,9 @@ class BotHandlers:
 
             unix_path = file_path.as_posix()
             prompt = (
-                f"User: {caption}\n\nRead the file at {unix_path} and act on the user's request."
+                f"@file-parser User: {caption}\n\nRead the file at {unix_path} and act on the user's request."
                 if caption
-                else f"User sent a file: {safe_name}\n\nRead the file at {unix_path} and do what seems appropriate."
+                else f"@file-parser User sent a file: {safe_name}\n\nRead the file at {unix_path} and do what seems appropriate."
             )
 
             session_id = await self._get_or_create_session(chat_id)
