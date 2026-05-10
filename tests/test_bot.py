@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -124,14 +124,9 @@ class TestBotHandlers:
         file_mock = MagicMock()
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
-        handlers.client.send_message = AsyncMock(return_value="response")
-        # Mock file stat, open, and base64 to avoid touching the filesystem
-        fake_stat = MagicMock(st_size=100)
-        with patch("pathlib.Path.stat", return_value=fake_stat), \
-             patch("builtins.open", mock_open(read_data=b"fake_img")), \
-             patch("base64.b64encode", return_value=b"ZmFrZV9pbWc="):
-            await handlers.on_photo(mock_update, mock_context)
-        handlers.client.send_message.assert_awaited_once()
+        handlers.client.send_message_cli = AsyncMock(return_value="Foto ricevuta. Analizzo l'immagine...")
+        await handlers.on_photo(mock_update, mock_context)
+        handlers.client.send_message_cli.assert_awaited_once()
 
     async def test_on_document(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
         doc = MagicMock()
@@ -141,9 +136,9 @@ class TestBotHandlers:
         file_mock = MagicMock()
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
-        handlers.client.send_message = AsyncMock(return_value="response")
+        handlers.client.send_message_cli = AsyncMock(return_value="Documento ricevuto. Analizzo il file...")
         await handlers.on_document(mock_update, mock_context)
-        handlers.client.send_message.assert_awaited_once()
+        handlers.client.send_message_cli.assert_awaited_once()
 
 
 class TestAuthCheck:

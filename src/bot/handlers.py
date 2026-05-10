@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import contextlib
 import os
 import re
@@ -199,28 +198,21 @@ class BotHandlers:
             file = await context.bot.get_file(largest.file_id)
             file_path = safe_path(file_name, Path("storage/uploads"))
             await file.download_to_drive(str(file_path))
-            file_size = file_path.stat().st_size
-            print(f"[bot] photo downloaded: {file_size} bytes")
+            print(f"[bot] photo downloaded to {file_path}")
 
-            # Read and base64-encode the image for vision-capable models
-            with open(file_path, "rb") as f:
-                raw = f.read()
-            image_b64 = base64.b64encode(raw).decode()
-            b64_size = len(image_b64)
-            raw_size = len(raw)
-            print(f"[bot] photo encoded: raw={raw_size} bytes, base64={b64_size} bytes")
-
+            # Relative path from project dir (opencode serve CWD)
+            project_dir = Path(self.config.opencode_project_dir).resolve()
+            rel_path = file_path.relative_to(project_dir).as_posix()
             prompt = (
-                f"@file-parser User: {caption}\n\nThe image is: data:image/jpeg;base64,{image_b64}\n\nLook at it and act on the user's request."
+                f"Use the file-parser subagent to analyze the image at {rel_path}. "
+                f"The user says: {caption}"
                 if caption
-                else f"@file-parser User sent an image: data:image/jpeg;base64,{image_b64}\n\nLook at it and describe what you see."
+                else f"Use the file-parser subagent to analyze the image at {rel_path} and describe what you see."
             )
-
-            prompt_size = len(prompt)
-            print(f"[bot] sending photo prompt ({prompt_size} chars) to session...")
-            session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(session_id, prompt)
-            print(f"[bot] photo response received ({len(response)} chars)")
+            print(f"[bot] delegating to file-parser via CLI (disposable session)")
+            print(f"[bot] prompt: {prompt}")
+            response = await self.client.send_message_cli(prompt)
+            print(f"[bot] photo response received ({len(response)} chars): {response[:200]}")
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
@@ -271,15 +263,19 @@ class BotHandlers:
             file_path = safe_path(safe_name, Path("storage/uploads"))
             await file.download_to_drive(str(file_path))
 
-            unix_path = file_path.as_posix()
+            # Relative path from project dir (opencode serve CWD)
+            project_dir = Path(self.config.opencode_project_dir).resolve()
+            rel_path = file_path.relative_to(project_dir).as_posix()
             prompt = (
-                f"@file-parser User: {caption}\n\nRead the file at {unix_path} and act on the user's request."
+                f"Use the file-parser subagent to analyze the file at {rel_path}. "
+                f"The user says: {caption}"
                 if caption
-                else f"@file-parser User sent a file: {safe_name}\n\nRead the file at {unix_path} and do what seems appropriate."
+                else f"Use the file-parser subagent to analyze the file at {rel_path} and describe what it contains."
             )
 
-            session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(session_id, prompt)
+            print(f"[bot] delegating to file-parser via CLI (disposable session)")
+            print(f"[bot] prompt: {prompt}")
+            response = await self.client.send_message_cli(prompt)
             typing.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await typing
