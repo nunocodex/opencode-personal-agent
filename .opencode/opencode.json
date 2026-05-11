@@ -3,7 +3,9 @@
   "model": "opencode-go/qwen3.6-plus",
   "default_agent": "orchestrator",
   "plugin": [
-    "@asidorenko/openslimedit"
+    "superpowers",
+    "@asidorenko/openslimedit",
+    "agents-opencode"
   ],
   "agent": {
     "build": { "model": "opencode-go/kimi-k2.6" },
