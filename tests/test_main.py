@@ -18,6 +18,7 @@ class TestMain:
                 pm = MagicMock()
                 pm.start = AsyncMock()
                 pm.stop = AsyncMock()
+                pm.close = AsyncMock()
                 MockPM.return_value = pm
                 with patch("main.build_app") as mock_build_app:
                     app = MagicMock()
@@ -30,7 +31,10 @@ class TestMain:
                     updater.start_polling = AsyncMock()
                     updater.stop = AsyncMock()
                     app.updater = updater
-                    mock_build_app.return_value = app
+                    handlers_mock = MagicMock()
+                    handlers_mock.close = AsyncMock()
+                    media_mock = MagicMock()
+                    mock_build_app.return_value = (app, handlers_mock, media_mock)
                     with patch("main.signal.signal"):
                         with patch("main.asyncio.Event", return_value=event):
                             task = asyncio.create_task(self._run_main())
@@ -39,9 +43,11 @@ class TestMain:
                             await task
         pm.start.assert_awaited_once()
         pm.stop.assert_awaited_once()
+        pm.close.assert_awaited_once()
         app.initialize.assert_awaited_once()
         app.updater.start_polling.assert_awaited_once()
         app.start.assert_awaited_once()
+        handlers_mock.close.assert_awaited_once()
         app.updater.stop.assert_awaited_once()
         app.stop.assert_awaited_once()
         app.shutdown.assert_awaited_once()

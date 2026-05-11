@@ -23,7 +23,7 @@ async def start_bot() -> None:
 
     await pm.start()
 
-    app = build_app(config, pm)
+    app, handlers, media = build_app(config, pm)
 
     shutdown_event = asyncio.Event()
 
@@ -47,6 +47,8 @@ async def start_bot() -> None:
         await app.updater.stop()
         await app.stop()
         await app.shutdown()
+        await handlers.close()
+        await pm.close()
         await pm.stop()
         print("[main] shutdown complete.")
 

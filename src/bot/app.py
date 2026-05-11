@@ -18,14 +18,18 @@ if _SRC not in sys.path:
 
 from config import Config
 from process.manager import ProcessManager
+from voice.transcriber import VoiceTranscriber
 
 from bot.handlers import BotHandlers
+from bot.media_handler import MediaHandler
 from bot.session import SessionStore
 
 
-def build_app(config: Config, process_manager: ProcessManager) -> Application:
+def build_app(config: Config, process_manager: ProcessManager) -> tuple[Application, BotHandlers, MediaHandler]:
     store = SessionStore()
+    transcriber = VoiceTranscriber()
     handlers = BotHandlers(config, store, process_manager)
+    media = MediaHandler(config, handlers.client, store, transcriber)
 
     app = (
         Application.builder()
@@ -42,8 +46,8 @@ def build_app(config: Config, process_manager: ProcessManager) -> Application:
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.on_text))
-    app.add_handler(MessageHandler(filters.PHOTO, handlers.on_photo))
-    app.add_handler(MessageHandler(filters.Document.ALL, handlers.on_document))
-    app.add_handler(MessageHandler(filters.VOICE, handlers.on_voice))
+    app.add_handler(MessageHandler(filters.PHOTO, media.on_photo))
+    app.add_handler(MessageHandler(filters.Document.ALL, media.on_document))
+    app.add_handler(MessageHandler(filters.VOICE, media.on_voice))
 
-    return app
+    return app, handlers, media

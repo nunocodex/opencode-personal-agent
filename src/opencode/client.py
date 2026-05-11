@@ -22,6 +22,18 @@ class OpenCodeClient:
             creds = f"{config.opencode_server_username}:{config.opencode_server_password}"
             self._auth = base64.b64encode(creds.encode()).decode()
         self._project_dir = config.opencode_project_dir
+        # Reusable HTTP client connection pool
+        self._client: httpx.AsyncClient | None = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0))
+        return self._client
+
+    async def close(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
@@ -34,14 +46,14 @@ class OpenCodeClient:
         params: dict[str, str] = {}
         if project_dir:
             params["directory"] = project_dir
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                url,
-                params=params,
-                headers=self._headers(),
-                json={"title": title},
-                timeout=30.0,
-            )
+        client = self._get_client()
+        resp = await client.post(
+            url,
+            params=params,
+            headers=self._headers(),
+            json={"title": title},
+            timeout=30.0,
+        )
         resp.raise_for_status()
         data = resp.json()
         session_id = data.get("id")
@@ -52,13 +64,13 @@ class OpenCodeClient:
     async def send_message(self, session_id: str, text: str) -> str:
         text_preview = text[:200]
         url = f"{self.base_url}/session/{session_id}/message"
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                url,
-                headers=self._headers(),
-                json={"parts": [{"type": "text", "text": text}]},
-                timeout=300.0,
-            )
+        client = self._get_client()
+        resp = await client.post(
+            url,
+            headers=self._headers(),
+            json={"parts": [{"type": "text", "text": text}]},
+            timeout=300.0,
+        )
         if resp.status_code != 200:
             print(f"[opencode] send_message returned {resp.status_code}: {resp.text[:500]}")
             resp.raise_for_status()
@@ -91,35 +103,39 @@ class OpenCodeClient:
         if not exe:
             raise RuntimeError("'opencode' executable not found in PATH")
 
-        # Compress newlines: Windows CLI may truncate multi-line args
-        message = text.replace("\n", " ").replace("\r", "")
+        # Compress newlines only if message is passed as CLI argument.
+        # Windows CLI may truncate multi-line args, so we pass via stdin
+        # to preserve the full message structure.
         cmd = [
             exe, "run", "--format", "json",
             "--title", "Bot file analysis",
             "--dir", str(Path(self._project_dir).resolve()),
-            message,
+            "-",  # Read message from stdin
         ]
 
         print(f"[opencode] spawning: {' '.join(cmd)}")
 
         # Strip auth env vars — opencode run CLI creates local sessions and
-        # gets confused by OPENCODE_SERVER_USERNAME/PASSWORD from the .env
-        strip_vars = {"OPENCODE_SERVER_USERNAME", "OPENCODE_SERVER_PASSWORD",
-                       "OPENCODE_SERVER_URL"}
+        # gets confused by OPENCODE_SERVER_USERNAME/PASSWORD from the .env.
+        # Also strip Telegram/HF tokens to avoid leaking to subprocesses.
+        strip_vars = {
+            "OPENCODE_SERVER_USERNAME", "OPENCODE_SERVER_PASSWORD",
+            "OPENCODE_SERVER_URL", "TELEGRAM_BOT_TOKEN", "HF_TOKEN",
+        }
         clean_env = {k: v for k, v in os.environ.items()
                      if k not in strip_vars}
 
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             env=clean_env,
-            stdin=asyncio.subprocess.DEVNULL,
+            stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
 
         try:
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=timeout,
+                proc.communicate(text.encode()), timeout=timeout,
             )
         except asyncio.TimeoutError:
             proc.kill()
@@ -179,8 +195,8 @@ class OpenCodeClient:
 
     async def delete_session(self, session_id: str) -> None:
         url = f"{self.base_url}/session/{session_id}"
-        async with httpx.AsyncClient() as client:
-            resp = await client.delete(url, headers=self._headers(), timeout=30.0)
+        client = self._get_client()
+        resp = await client.delete(url, headers=self._headers(), timeout=30.0)
         if resp.status_code == 404:
             return
         resp.raise_for_status()
