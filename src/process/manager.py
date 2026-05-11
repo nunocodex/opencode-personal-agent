@@ -49,11 +49,23 @@ class ProcessManager:
         if not exe:
             raise RuntimeError("'opencode' executable not found in PATH")
         cmd = [exe, "serve", "--port", str(port), "--hostname", host]
+
+        # Strip sensitive env vars — opencode serve does not need Telegram,
+        # HF, or OpenCode server credentials. Prevents credential leakage
+        # if the subprocess is compromised or logs its environment.
+        strip_vars = {
+            "OPENCODE_SERVER_USERNAME", "OPENCODE_SERVER_PASSWORD",
+            "OPENCODE_SERVER_URL", "TELEGRAM_BOT_TOKEN", "HF_TOKEN",
+        }
+        clean_env = {k: v for k, v in os.environ.items()
+                     if k not in strip_vars}
+
         if sys.platform == "win32":
             # On Windows use CREATE_NEW_PROCESS_GROUP for graceful SIGTERM
             self._process = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=self.config.opencode_project_dir,
+                env=clean_env,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,  # type: ignore[attr-defined]
@@ -62,6 +74,7 @@ class ProcessManager:
             self._process = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=self.config.opencode_project_dir,
+                env=clean_env,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

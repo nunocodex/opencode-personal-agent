@@ -53,7 +53,6 @@ class MediaHandler:
             return
         if not await check_auth(update, self.config):
             return
-        chat_id = update.effective_chat.id
         photos = update.effective_message.photo
         if not photos:
             return
@@ -68,7 +67,7 @@ class MediaHandler:
         caption = update.effective_message.caption or ""
         file_name = f"photo_{update.effective_message.message_id}.jpg"
 
-        print(f"[bot] photo from {chat_id}: {file_name}")
+        print(f"[bot] photo: {file_name}")
         file_path: Path | None = None
         try:
             async with typing_scope(update):
@@ -76,7 +75,7 @@ class MediaHandler:
                     file = await context.bot.get_file(largest.file_id)
                     file_path = safe_path(file_name, Path("storage/uploads"))
                     await file.download_to_drive(str(file_path))
-                    print(f"[bot] photo downloaded to {file_path}")
+                    print("[bot] photo downloaded")
 
                     project_dir = Path(self.config.opencode_project_dir).resolve()
                     rel_path = file_path.relative_to(project_dir).as_posix()
@@ -99,7 +98,7 @@ class MediaHandler:
                     response = await self.client.send_message_cli(prompt)
                     print(f"[bot] photo response received ({len(response)} chars): {response[:200]}")
                 except Exception as exc:
-                    print(f"[bot] error processing photo from {chat_id}: {type(exc).__name__}: {exc}")
+                    print(f"[bot] error processing photo: {type(exc).__name__}: {exc}")
                     await update.effective_message.reply_text(
                         "Sorry, I failed to process the photo.",
                         parse_mode="Markdown",
@@ -120,7 +119,6 @@ class MediaHandler:
             return
         if not await check_auth(update, self.config):
             return
-        chat_id = update.effective_chat.id
         doc = update.effective_message.document
         if not doc:
             return
@@ -144,7 +142,7 @@ class MediaHandler:
         safe_name = safe_name or f"file_{int(time.time())}"
         caption = update.effective_message.caption or ""
 
-        print(f"[bot] document from {chat_id}: {safe_name}")
+        print(f"[bot] document: {safe_name}")
         file_path: Path | None = None
         try:
             async with typing_scope(update):
@@ -173,7 +171,7 @@ class MediaHandler:
                     print(f"[bot] prompt: {prompt}")
                     response = await self.client.send_message_cli(prompt)
                 except Exception as exc:
-                    print(f"[bot] error processing document from {chat_id}: {exc}")
+                    print(f"[bot] error processing document: {exc}")
                     await update.effective_message.reply_text(
                         "Sorry, I failed to process the document.",
                         parse_mode="Markdown",
@@ -208,7 +206,7 @@ class MediaHandler:
         caption = update.effective_message.caption or ""
         file_name = f"voice_{update.effective_message.message_id}.ogg"
 
-        print(f"[bot] voice from {chat_id}: {voice.file_id}")
+        print(f"[bot] voice: {voice.file_id}")
         file_path: Path | None = None
         try:
             async with typing_scope(update):
@@ -230,7 +228,7 @@ class MediaHandler:
                     session_id = await self._get_or_create_session(chat_id)
                     response = await self.client.send_message(session_id, prompt)
                 except Exception as exc:
-                    print(f"[bot] error processing voice from {chat_id}: {exc}")
+                    print(f"[bot] error processing voice: {exc}")
                     await update.effective_message.reply_text(
                         "Sorry, I failed to process the voice message.",
                         parse_mode="Markdown",
