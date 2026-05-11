@@ -113,7 +113,7 @@ class OpenCodeClient:
             "-",  # Read message from stdin
         ]
 
-        print(f"[opencode] spawning: {' '.join(cmd)}")
+        print("[opencode] spawning CLI subprocess")
 
         # Strip auth env vars — opencode run CLI creates local sessions and
         # gets confused by OPENCODE_SERVER_USERNAME/PASSWORD from the .env.

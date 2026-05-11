@@ -48,7 +48,7 @@ class BotHandlers:
                     "Access denied. Your chat ID is not authorized.",
                     parse_mode="Markdown",
                 )
-            print(f"[auth] unauthorized access from {chat.id}")
+            print("[auth] unauthorized access attempt")
             return False
         return True
 
@@ -172,13 +172,13 @@ class BotHandlers:
         if re.match(r"^\^.", text):
             return
 
-        print(f"[bot] text from {chat_id}: {text[:50]}...")
+        print(f"[bot] text: {text[:50]}...")
         async with typing_scope(update):
             try:
                 session_id = await self._get_or_create_session(chat_id)
                 response = await self.client.send_message(session_id, text)
             except Exception as exc:
-                print(f"[bot] error processing text from {chat_id}: {exc}")
+                print(f"[bot] error processing text: {exc}")
                 await update.effective_message.reply_text(
                     "Sorry, I encountered an error processing your request.",
                     parse_mode="Markdown",
