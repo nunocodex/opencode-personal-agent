@@ -1,4 +1,4 @@
-"""Tests for bot handlers and session store."""
+"""Tests for bot handlers, media handler, and session store."""
 from __future__ import annotations
 
 import asyncio
@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bot.handlers import BotHandlers
+from bot.media_handler import MediaHandler
 from bot.session import SessionStore
 from bot.utils import send_reply
 from config import Config
@@ -37,6 +38,7 @@ class TestSendReply:
         await send_reply(mock_update, "hello")
         mock_update.effective_message.reply_text.assert_called_once_with(
             "hello",
+            parse_mode="Markdown",
             do_quote=True,
         )
 
@@ -65,7 +67,8 @@ class TestBotHandlers:
     async def test_cmd_new_no_session(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
         await handlers.cmd_new(mock_update, mock_context)
         mock_update.effective_message.reply_text.assert_called_once_with(
-            "Session cleared. Starting a fresh conversation."
+            "Session cleared. Starting a fresh conversation.",
+            parse_mode="Markdown",
         )
 
     async def test_cmd_new_deletes_session(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
@@ -104,41 +107,57 @@ class TestBotHandlers:
         await handlers.on_text(mock_update, mock_context)
         handlers.client.send_message.assert_awaited_once()
 
-    async def test_on_voice(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
+
+class TestMediaHandler:
+    @pytest.fixture
+    def media(self, config: Config) -> MediaHandler:
+        store = SessionStore()
+        client = MagicMock()
+        client.create_session = AsyncMock()
+        client.send_message = AsyncMock()
+        client.send_message_cli = AsyncMock()
+        client.delete_session = AsyncMock()
+        transcriber = MagicMock()
+        return MediaHandler(config, client, store, transcriber)
+
+    async def test_on_voice(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
         voice = MagicMock()
         voice.file_id = "voice-id"
+        voice.file_size = 1024
         mock_update.effective_message.voice = voice
         file_mock = MagicMock()
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
-        handlers.transcriber.transcribe = MagicMock(return_value="transcribed text")
-        handlers.client.send_message = AsyncMock(return_value="response")
-        await handlers.on_voice(mock_update, mock_context)
-        handlers.transcriber.transcribe.assert_called_once()
-        handlers.client.send_message.assert_awaited_once()
+        media.transcriber.transcribe = MagicMock(return_value="transcribed text")
+        media.client.send_message = AsyncMock(return_value="response")
+        await media.on_voice(mock_update, mock_context)
+        media.transcriber.transcribe.assert_called_once()
+        media.client.send_message.assert_awaited_once()
 
-    async def test_on_photo(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
+    async def test_on_photo(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
         photo = MagicMock()
         photo.file_id = "photo-id"
+        photo.file_size = 1024
         mock_update.effective_message.photo = [photo]
         file_mock = MagicMock()
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
-        handlers.client.send_message_cli = AsyncMock(return_value="Foto ricevuta. Analizzo l'immagine...")
-        await handlers.on_photo(mock_update, mock_context)
-        handlers.client.send_message_cli.assert_awaited_once()
+        media.client.send_message_cli = AsyncMock(return_value="Foto ricevuta. Analizzo l'immagine...")
+        await media.on_photo(mock_update, mock_context)
+        media.client.send_message_cli.assert_awaited_once()
 
-    async def test_on_document(self, handlers: BotHandlers, mock_update: MagicMock, mock_context: MagicMock) -> None:
+    async def test_on_document(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
         doc = MagicMock()
         doc.file_id = "doc-id"
         doc.file_name = "report.pdf"
+        doc.file_size = 1024
         mock_update.effective_message.document = doc
         file_mock = MagicMock()
         file_mock.download_to_drive = AsyncMock()
         mock_context.bot.get_file = AsyncMock(return_value=file_mock)
-        handlers.client.send_message_cli = AsyncMock(return_value="Documento ricevuto. Analizzo il file...")
-        await handlers.on_document(mock_update, mock_context)
-        handlers.client.send_message_cli.assert_awaited_once()
+        media.client.send_message_cli = AsyncMock(return_value="Documento ricevuto. Analizzo il file...")
+        await media.on_document(mock_update, mock_context)
+        media.client.send_message_cli.assert_awaited_once()
 
 
 class TestAuthCheck:
@@ -153,6 +172,17 @@ class TestAuthCheck:
         h.client.send_message = AsyncMock()
         h.client.delete_session = AsyncMock()
         return h
+
+    @pytest.fixture
+    def media(self, config: Config) -> MediaHandler:
+        store = SessionStore()
+        client = MagicMock()
+        client.create_session = AsyncMock()
+        client.send_message = AsyncMock()
+        client.send_message_cli = AsyncMock()
+        client.delete_session = AsyncMock()
+        transcriber = MagicMock()
+        return MediaHandler(config, client, store, transcriber)
 
     @pytest.fixture
     def unauth_update(self) -> MagicMock:
@@ -172,7 +202,6 @@ class TestAuthCheck:
 
     async def test_cmd_start_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
         await handlers.cmd_start(unauth_update, mock_context)
-        # Should reply "Access denied" and NOT proceed to welcome message
         calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
         assert any("Access denied" in c for c in calls)
 
@@ -204,33 +233,33 @@ class TestAuthCheck:
         calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
         assert any("Access denied" in c for c in calls)
 
-    async def test_on_photo_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+    async def test_on_photo_blocked(self, media: MediaHandler, unauth_update: MagicMock, mock_context: MagicMock) -> None:
         photo = MagicMock()
         photo.file_id = "photo-id"
         unauth_update.effective_message.photo = [photo]
         mock_context.bot.get_file = AsyncMock()
-        await handlers.on_photo(unauth_update, mock_context)
-        handlers.client.send_message.assert_not_called()
+        await media.on_photo(unauth_update, mock_context)
+        media.client.send_message.assert_not_called()
         calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
         assert any("Access denied" in c for c in calls)
 
-    async def test_on_document_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+    async def test_on_document_blocked(self, media: MediaHandler, unauth_update: MagicMock, mock_context: MagicMock) -> None:
         doc = MagicMock()
         doc.file_id = "doc-id"
         doc.file_name = "doc.pdf"
         unauth_update.effective_message.document = doc
         mock_context.bot.get_file = AsyncMock()
-        await handlers.on_document(unauth_update, mock_context)
-        handlers.client.send_message.assert_not_called()
+        await media.on_document(unauth_update, mock_context)
+        media.client.send_message.assert_not_called()
         calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
         assert any("Access denied" in c for c in calls)
 
-    async def test_on_voice_blocked(self, handlers: BotHandlers, unauth_update: MagicMock, mock_context: MagicMock) -> None:
+    async def test_on_voice_blocked(self, media: MediaHandler, unauth_update: MagicMock, mock_context: MagicMock) -> None:
         voice = MagicMock()
         voice.file_id = "voice-id"
         unauth_update.effective_message.voice = voice
         mock_context.bot.get_file = AsyncMock()
-        await handlers.on_voice(unauth_update, mock_context)
-        handlers.client.send_message.assert_not_called()
+        await media.on_voice(unauth_update, mock_context)
+        media.client.send_message.assert_not_called()
         calls = [c[0][0] for c in unauth_update.effective_message.reply_text.call_args_list]
         assert any("Access denied" in c for c in calls)

@@ -1,9 +1,8 @@
-"""Telegram bot handlers for commands and messages."""
+"""Telegram bot handlers for commands and text messages."""
 from __future__ import annotations
 
 import asyncio
 import contextlib
-import os
 import re
 import time
 from pathlib import Path
@@ -15,20 +14,25 @@ from telegram.ext import ContextTypes
 from config import Config
 from opencode.client import OpenCodeClient
 from process.manager import ProcessManager
-from security import safe_path
-from voice.transcriber import VoiceTranscriber
 
 from .session import SessionStore
-from .utils import send_reply
+from .utils import send_reply, typing_scope
 
 
 class BotHandlers:
+    """Handles commands and text messages."""
+
     def __init__(self, config: Config, store: SessionStore, process_manager: ProcessManager) -> None:
         self.config = config
         self.store = store
         self.pm = process_manager
         self.client = OpenCodeClient(config)
-        self.transcriber = VoiceTranscriber()
+        self._last_request_time: float = 0.0
+        self._min_interval: float = getattr(config, "rate_limit_seconds", 2.0)
+
+    async def close(self) -> None:
+        """Release HTTP client resources."""
+        await self.client.close()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -41,7 +45,8 @@ class BotHandlers:
         if chat.id != self.config.allowed_chat_id:
             if update.effective_message:
                 await update.effective_message.reply_text(
-                    "Access denied. Your chat ID is not authorized."
+                    "Access denied. Your chat ID is not authorized.",
+                    parse_mode="Markdown",
                 )
             print(f"[auth] unauthorized access from {chat.id}")
             return False
@@ -57,13 +62,19 @@ class BotHandlers:
             self.store.set(chat_id, session_id)
         return session_id
 
-    def _typing_task(self, update: Update) -> asyncio.Task[Any]:
-        async def loop() -> None:
-            while True:
-                if update.effective_chat:
-                    await update.effective_chat.send_action(action="typing")
-                await asyncio.sleep(4)
-        return asyncio.create_task(loop())
+    async def _check_rate_limit(self, update: Update) -> bool:
+        """Reject requests that come too quickly. Returns False if rate limited."""
+        now = time.monotonic()
+        elapsed = now - self._last_request_time
+        if elapsed < self._min_interval:
+            if update.effective_message:
+                await update.effective_message.reply_text(
+                    f"Please wait {self._min_interval:.0f}s between requests.",
+                    parse_mode="Markdown",
+                )
+            return False
+        self._last_request_time = now
+        return True
 
     # ------------------------------------------------------------------
     # Commands
@@ -82,7 +93,8 @@ class BotHandlers:
             "/status - Show server status\n"
             "/restart - Restart the OpenCode server\n"
             "/help - Show available commands\n\n"
-            "You can also send voice messages."
+            "You can also send voice messages.",
+            parse_mode="Markdown",
         )
 
     async def cmd_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -114,7 +126,7 @@ class BotHandlers:
             except Exception:
                 pass
             self.store.delete(chat_id)
-        await update.effective_message.reply_text("Session cleared. Starting a fresh conversation.")
+        await update.effective_message.reply_text("Session cleared. Starting a fresh conversation.", parse_mode="Markdown")
 
     async def cmd_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
@@ -128,19 +140,20 @@ class BotHandlers:
             f"Server: {'running' if healthy else 'unhealthy'}",
             f"Uptime: {uptime_str}",
         ]
-        await update.effective_message.reply_text("\n".join(lines))
+        await update.effective_message.reply_text("\n".join(lines), parse_mode="Markdown")
 
     async def cmd_restart(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.effective_message:
             return
         if not await self._check_auth(update):
             return
-        await update.effective_message.reply_text("Restarting OpenCode server...")
+        await update.effective_message.reply_text("Restarting OpenCode server...", parse_mode="Markdown")
         try:
             await self.pm.restart()
-            await update.effective_message.reply_text("Server restarted successfully.")
-        except Exception as exc:
-            await update.effective_message.reply_text(f"Restart failed: {exc}")
+            await update.effective_message.reply_text("Server restarted successfully.", parse_mode="Markdown")
+        except Exception:
+            print(f"[bot] restart failed")
+            await update.effective_message.reply_text("Restart failed. Check logs for details.", parse_mode="Markdown")
 
     # ------------------------------------------------------------------
     # Text
@@ -150,6 +163,8 @@ class BotHandlers:
             return
         if not await self._check_auth(update):
             return
+        if not await self._check_rate_limit(update):
+            return
         chat_id = update.effective_chat.id
         text = update.effective_message.text or ""
         if text.startswith("/"):
@@ -158,186 +173,16 @@ class BotHandlers:
             return
 
         print(f"[bot] text from {chat_id}: {text[:50]}...")
-        typing = self._typing_task(update)
-        try:
-            session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(session_id, text)
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
+        async with typing_scope(update):
+            try:
+                session_id = await self._get_or_create_session(chat_id)
+                response = await self.client.send_message(session_id, text)
+            except Exception as exc:
+                print(f"[bot] error processing text from {chat_id}: {exc}")
+                await update.effective_message.reply_text(
+                    "Sorry, I encountered an error processing your request.",
+                    parse_mode="Markdown",
+                    do_quote=True,
+                )
+                return
             await send_reply(update, response)
-        except Exception as exc:
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            print(f"[bot] error processing text from {chat_id}: {exc}")
-            await update.effective_message.reply_text(
-                "Sorry, I encountered an error processing your request.",
-                do_quote=True,
-            )
-
-    # ------------------------------------------------------------------
-    # Photo
-    # ------------------------------------------------------------------
-    async def on_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not update.effective_message or update.effective_chat is None or not context.bot:
-            return
-        if not await self._check_auth(update):
-            return
-        chat_id = update.effective_chat.id
-        photos = update.effective_message.photo
-        if not photos:
-            return
-        largest = photos[-1]
-        caption = update.effective_message.caption or ""
-        file_name = f"photo_{update.effective_message.message_id}.jpg"
-
-        print(f"[bot] photo from {chat_id}: {file_name}")
-        typing = self._typing_task(update)
-        try:
-            file = await context.bot.get_file(largest.file_id)
-            file_path = safe_path(file_name, Path("storage/uploads"))
-            await file.download_to_drive(str(file_path))
-            print(f"[bot] photo downloaded to {file_path}")
-
-            # Relative path from project dir (opencode serve CWD)
-            project_dir = Path(self.config.opencode_project_dir).resolve()
-            rel_path = file_path.relative_to(project_dir).as_posix()
-            prompt = (
-                f"Use the file-parser subagent to analyze the image at {rel_path}. "
-                f"The user says: {caption}"
-                if caption
-                else f"Use the file-parser subagent to analyze the image at {rel_path} and describe what you see."
-            )
-            print(f"[bot] delegating to file-parser via CLI (disposable session)")
-            print(f"[bot] prompt: {prompt}")
-            response = await self.client.send_message_cli(prompt)
-            print(f"[bot] photo response received ({len(response)} chars): {response[:200]}")
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            await send_reply(update, response)
-        except Exception as exc:
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            print(f"[bot] error processing photo from {chat_id}: {type(exc).__name__}: {exc}")
-            await update.effective_message.reply_text(
-                "Sorry, I failed to process the photo.",
-                do_quote=True,
-            )
-        finally:
-            with contextlib.suppress(Exception):
-                file_path.unlink(missing_ok=True)
-
-    # ------------------------------------------------------------------
-    # Document
-    # ------------------------------------------------------------------
-    async def on_document(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not update.effective_message or update.effective_chat is None or not context.bot:
-            return
-        if not await self._check_auth(update):
-            return
-        chat_id = update.effective_chat.id
-        doc = update.effective_message.document
-        if not doc:
-            return
-        raw_name = doc.file_name or "document"
-        safe_name = re.sub(r'[\\/]', "_", raw_name)
-        safe_name = re.sub(r'\.{2,}', "_", safe_name)
-        # Block Windows-reserved characters and names
-        safe_name = re.sub(r'[:*?"<>|]', "_", safe_name)
-        stem, dot, ext = safe_name.partition(".")
-        reserved = {"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
-                     "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
-                     "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
-        if stem.upper() in reserved:
-            safe_name = f"_{safe_name}"
-        safe_name = safe_name or f"file_{int(time.time())}"
-        caption = update.effective_message.caption or ""
-
-        print(f"[bot] document from {chat_id}: {safe_name}")
-        typing = self._typing_task(update)
-        try:
-            file = await context.bot.get_file(doc.file_id)
-            file_path = safe_path(safe_name, Path("storage/uploads"))
-            await file.download_to_drive(str(file_path))
-
-            # Relative path from project dir (opencode serve CWD)
-            project_dir = Path(self.config.opencode_project_dir).resolve()
-            rel_path = file_path.relative_to(project_dir).as_posix()
-            prompt = (
-                f"Use the file-parser subagent to analyze the file at {rel_path}. "
-                f"The user says: {caption}"
-                if caption
-                else f"Use the file-parser subagent to analyze the file at {rel_path} and describe what it contains."
-            )
-
-            print(f"[bot] delegating to file-parser via CLI (disposable session)")
-            print(f"[bot] prompt: {prompt}")
-            response = await self.client.send_message_cli(prompt)
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            await send_reply(update, response)
-        except Exception as exc:
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            print(f"[bot] error processing document from {chat_id}: {exc}")
-            await update.effective_message.reply_text(
-                "Sorry, I failed to process the document.",
-                do_quote=True,
-            )
-        finally:
-            with contextlib.suppress(Exception):
-                file_path.unlink(missing_ok=True)
-
-    # ------------------------------------------------------------------
-    # Voice
-    # ------------------------------------------------------------------
-    async def on_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not update.effective_message or update.effective_chat is None or not context.bot:
-            return
-        if not await self._check_auth(update):
-            return
-        chat_id = update.effective_chat.id
-        voice = update.effective_message.voice
-        if not voice:
-            return
-        caption = update.effective_message.caption or ""
-        file_name = f"voice_{update.effective_message.message_id}.ogg"
-
-        print(f"[bot] voice from {chat_id}: {voice.file_id}")
-        typing = self._typing_task(update)
-        try:
-            file = await context.bot.get_file(voice.file_id)
-            file_path = safe_path(file_name, Path("storage/uploads"))
-            await file.download_to_drive(str(file_path))
-
-            text = self.transcriber.transcribe(str(file_path), self.config.whisper_language)
-
-            prompt = (
-                f"User: {caption}\n\nTranscription of voice message: {text}"
-                if caption
-                else f"User sent a voice message. Transcription: {text}"
-            )
-
-            session_id = await self._get_or_create_session(chat_id)
-            response = await self.client.send_message(session_id, prompt)
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            await send_reply(update, response)
-        except Exception as exc:
-            typing.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await typing
-            print(f"[bot] error processing voice from {chat_id}: {exc}")
-            await update.effective_message.reply_text(
-                "Sorry, I failed to process the voice message.",
-                do_quote=True,
-            )
-        finally:
-            with contextlib.suppress(Exception):
-                file_path.unlink(missing_ok=True)

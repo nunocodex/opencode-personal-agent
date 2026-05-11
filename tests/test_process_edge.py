@@ -19,7 +19,7 @@ class TestProcessManagerEdgeCases:
     async def test_is_healthy_401_counts(self, pm: ProcessManager) -> None:
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = MagicMock(status_code=401)
-            assert await pm.is_healthy() is True
+            assert await pm.is_healthy() is False
 
     async def test_is_healthy_500_fails(self, pm: ProcessManager) -> None:
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:

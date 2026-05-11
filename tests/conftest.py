@@ -25,6 +25,8 @@ def config() -> Config:
         opencode_server_username="opencode",
         opencode_server_password="secret",
         whisper_language="auto",
+        max_file_size=50 * 1024 * 1024,
+        rate_limit_seconds=2.0,
     )
 
 

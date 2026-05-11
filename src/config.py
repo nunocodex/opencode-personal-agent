@@ -35,6 +35,8 @@ class Config:
     opencode_server_username: str
     opencode_server_password: str | None
     whisper_language: str
+    max_file_size: int = 50 * 1024 * 1024  # 50 MB default
+    rate_limit_seconds: float = 2.0
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -50,6 +52,8 @@ class Config:
         username = os.getenv("OPENCODE_SERVER_USERNAME", "opencode")
         password = os.getenv("OPENCODE_SERVER_PASSWORD") or None
         whisper_language = os.getenv("WHISPER_LANGUAGE", "auto")
+        max_file_size = _env_int("MAX_FILE_SIZE", 50 * 1024 * 1024)
+        rate_limit_seconds = float(os.getenv("RATE_LIMIT_SECONDS", "2.0"))
 
         return cls(
             telegram_bot_token=token,
@@ -59,6 +63,8 @@ class Config:
             opencode_server_username=username,
             opencode_server_password=password,
             whisper_language=whisper_language,
+            max_file_size=max_file_size,
+            rate_limit_seconds=rate_limit_seconds,
         )
 
 
@@ -69,5 +75,6 @@ def load_config() -> Config:
             from dotenv import load_dotenv
             load_dotenv(dotenv_path, override=True)
         except ImportError:
-            pass
+            print("[config] Warning: python-dotenv not installed. "
+                  "Install it with: pip install python-dotenv")
     return Config.from_env()

@@ -69,3 +69,8 @@ tests/                  # 12 test files, ~84% coverage
 |-------|----------|
 | Runtime | `python-telegram-bot>=21`, `httpx>=0.27`, `python-dotenv>=1`, `faster-whisper>=1` |
 | Dev | `pytest>=8`, `pytest-asyncio>=0.23`, `pytest-cov>=5`, `respx>=0.21` |
+
+## Agent Rules (MANDATORY)
+
+- **ALWAYS delegate to specialized subagents** — never execute tasks directly. Use `task()` tool with appropriate subagent type (CoderAgent, TestEngineer, CodeReviewer, DocWriter, etc.) for all code, test, review, and documentation work.
+- **Bot responses use `parse_mode="Markdown"` (v1)** — NEVER use `MarkdownV2`. Telegram's MarkdownV2 is unreliable. All `reply_text()` calls must use `parse_mode="Markdown"` or omit it for plain text. Escape characters that break Markdown v1 (`_`, `*`, `` ` ``) when mixing user content with formatted text.

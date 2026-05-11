@@ -7,6 +7,8 @@ from pathlib import Path
 
 # Force HuggingFace cache into workspace before importing faster_whisper
 os.environ.setdefault("HF_HOME", str(Path(__file__).parent.parent.parent / "storage" / "models"))
+# Disable symlink warning on Windows (degraded caching is fine)
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
@@ -22,7 +24,9 @@ class VoiceTranscriber:
     def _init_model(self) -> WhisperModel:
         if self._model is None:
             print("[voice] loading faster-whisper small model (cpu, int8)...")
-            self._model = WhisperModel("small", device="cpu", compute_type="int8")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                self._model = WhisperModel("small", device="cpu", compute_type="int8")
         return self._model
 
     def transcribe(self, file_path: str | Path, language: str | None = None) -> str:

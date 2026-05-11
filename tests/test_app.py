@@ -13,7 +13,9 @@ class TestBuildApp:
         with patch("bot.app.Application.builder") as mock_builder:
             app_instance = MagicMock()
             mock_builder.return_value.token.return_value.build.return_value = app_instance
-            app = build_app(config, pm)
+            app, handlers, media = build_app(config, pm)
             assert app is app_instance
+            assert isinstance(handlers, object)
+            assert isinstance(media, object)
             # Should have called add_handler multiple times
             assert app.add_handler.call_count >= 9

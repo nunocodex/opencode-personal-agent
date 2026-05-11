@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import shutil
 import signal
@@ -22,6 +23,7 @@ class ProcessManager:
         self._process: asyncio.subprocess.Process | None = None
         self._start_time: float | None = None
         self._pipe_tasks: list[asyncio.Task[None]] = []
+        self._health_client: httpx.AsyncClient | None = None
 
     async def start(self) -> None:
         if self._process is not None and self._process.returncode is None:
@@ -75,6 +77,8 @@ class ProcessManager:
         await asyncio.sleep(5)
         healthy = await self.is_healthy()
         if not healthy:
+            # Close health client on failure to avoid leak
+            await self.close()
             raise RuntimeError("opencode serve is not responding after 5s")
         print(f"[ProcessManager] ready at {self.config.opencode_server_url}")
 
@@ -115,7 +119,6 @@ class ProcessManager:
 
         self._process = None
         self._start_time = None
-        self._start_time = None
 
         # Wait for pipe reader tasks to exit naturally (they get EOF
         # because the subprocess pipes are closed after killing the process)
@@ -137,14 +140,20 @@ class ProcessManager:
 
     async def is_healthy(self) -> bool:
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(
-                    f"{self.config.opencode_server_url}/global/health",
-                    timeout=5.0,
-                )
-            return resp.status_code < 500
+            if self._health_client is None:
+                self._health_client = httpx.AsyncClient()
+            resp = await self._health_client.get(
+                f"{self.config.opencode_server_url}/global/health",
+                timeout=5.0,
+            )
+            return 200 <= resp.status_code < 300
         except Exception:
             return False
+
+    async def close(self) -> None:
+        if self._health_client is not None:
+            await self._health_client.aclose()
+            self._health_client = None
 
     def uptime_seconds(self) -> float | None:
         if self._start_time is None:
@@ -192,7 +201,7 @@ class ProcessManager:
             line = await self._process.stdout.readline()
             if not line:
                 break
-            text = line.decode().strip()
+            text = line.decode(errors="replace").strip()
             if text:
                 print(f"[opencode-serve] {text}")
 
@@ -203,6 +212,6 @@ class ProcessManager:
             line = await self._process.stderr.readline()
             if not line:
                 break
-            text = line.decode().strip()
+            text = line.decode(errors="replace").strip()
             if text:
                 print(f"[opencode-serve] {text}", file=sys.stderr)
