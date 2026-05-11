@@ -2,8 +2,9 @@
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/qwen3.6-plus",
   "plugin": [
-    "list",
-    "superpowers"
+    "superpowers",
+    "@ramtinj95/opencode-tokenscope",
+    "@asidorenko/openslimedit"
   ],
   "permission": {
     "skill": {
@@ -11,6 +12,9 @@
     }
   },
   "agent": {
+    "build": {
+      "disable": true
+    },
     "plan": {
       "model": "opencode-go/glm-5.1"
     },
@@ -20,16 +24,20 @@
     "scout": {
       "model": "opencode-go/qwen3.6-plus"
     },
-    "build": {
-      "prompt": "Delegation policy:\n- Trivial tasks (< 30 LOC, single file, no new module, no security touchpoint): implement directly, do NOT delegate.\n- Multi-file or new module: delegate to @implementer.\n- Test work: delegate to @test-engineer.\n- Security-sensitive paths: involve @security-auditor.\n\nLoad skills only when relevant to the current task. Reply in Italian."
+    "auditor": {
+      "model": "opencode-go/glm-5.1"
     },
-    "security-auditor": {
-      "permission": {
-        "skill": {
-          "*": "deny",
-          "security-threat-model": "allow"
-        }
-      }
+    "light" : {
+      "model": "opencode-go/deepseek-v4-flash"
+    },
+    "medium" : {
+      "model": "opencode-go/qwen3.6-plus"
+    },
+    "heavy" : {
+      "model": "opencode-go/kimi-k2.6"
+    },
+    "file-parser": {
+      "model": "opencode-go/kimi-k2.6"
     }
   }
 }

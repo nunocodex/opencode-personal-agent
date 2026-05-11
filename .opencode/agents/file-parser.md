@@ -1,7 +1,6 @@
 ---
 description: Analyzes file attachments (images, documents, video) using vision
 mode: subagent
-model: opencode-go/kimi-k2.6
 temperature: 0.2
 permission:
   read: allow
