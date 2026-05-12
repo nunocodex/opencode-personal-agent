@@ -29,16 +29,21 @@ Or use the launcher scripts: `./run.ps1` (Windows) / `./run.sh` (Unix).
 
 ```
 CLI → Bootstrap (checks) → main.py → PTB Bot App
-                                      ├── handlers.py (commands + messages)
+                                      ├── app.py (Application setup)
+                                      ├── handlers.py (commands + text)
+                                      ├── media_handler.py (photo, document, voice)
+                                      ├── utils.py (send_reply, auth, typing)
                                       ├── session.py (in-memory dict)
                                       ├── opencode/client.py (httpx → OpenCode API)
                                       ├── process/manager.py (opencode serve subprocess)
                                       └── voice/transcriber.py (faster-whisper, local)
 ```
 
-- **`src/bot/handlers.py`** — all bot logic: 5 commands (`/start`, `/help`, `/new`, `/status`, `/restart`), 4 message types (text, photo, document, voice).
+- **`src/bot/handlers.py`** — bot logic for 5 commands (`/start`, `/help`, `/new`, `/status`, `/restart`) and text messages.
+- **`src/bot/media_handler.py`** — handles photo, document, and voice messages. Downloads files to `storage/uploads/`, delegates file analysis to the `file-parser` agent via `opencode run --agent file-parser`, and transcribes voice with faster-whisper.
+- **`src/bot/utils.py`** — shared utilities: `send_reply()` (splits long messages, detects JSON), `check_auth()`, `typing_scope()` (typing indicator).
 - **`src/process/manager.py`** — manages `opencode serve` lifecycle: start (5s wait + health check), stop (SIGTERM → 5s → SIGKILL), restart.
-- **`src/opencode/client.py`** — async HTTP client: create session, send message, delete session. Uses Basic Auth.
+- **`src/opencode/client.py`** — async HTTP client: create session, send message, delete session via API. Also provides `send_message_cli()` for media files, spawning `opencode run --agent file-parser` as a disposable session. Uses Basic Auth.
 - **`src/voice/transcriber.py`** — lazy-init WhisperModel("small", CPU, int8). `HF_HOME` forced to `storage/models/`.
 - **`src/security.py`** — `safe_path()` blocks traversal + sensitive file patterns.
 - **`src/bot/session.py`** — in-memory `dict[int, str]`. No persistence. Restart = fresh state.
@@ -65,4 +70,4 @@ CLI → Bootstrap (checks) → main.py → PTB Bot App
 
 ## OpenCode Config
 
-`.opencode/opencode.json` — default agent is `orchestrator`, model `qwen3.6-plus`. Skills are auto-allowed.
+`.opencode/opencode.json` — default agent is `build`, model `opencode-go/deepseek-v4-flash`. 8 agents are defined (plan, build, debug, review, docs, file-parser, explore, general). Two plugins: superpowers, @asidorenko/openslimedit. Skills are auto-allowed.

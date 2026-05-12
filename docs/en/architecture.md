@@ -10,7 +10,7 @@ System architecture documentation for the OpenCode Personal Agent Telegram bot.
 │                                                                   │
 │  ┌──────────┐    ┌──────────┐    ┌────────────────────────┐     │
 │  │   CLI    │───▶│ Bootstrap│───▶│   PTB Application      │     │
-│  │ (check,  │    │ (checks, │    │   (handlers, auth)     │     │
+│  │ (check,  │    │ (checks, │    │   (app.py)             │     │
 │  │  setup,  │    │ cleanup) │    └──────────┬─────────────┘     │
 │  │  start,  │    └──────────┘               │                   │
 │  │  test)   │                               │                   │
@@ -21,15 +21,21 @@ System architecture documentation for the OpenCode Personal Agent Telegram bot.
 │                  │  │    (start, help, new,         │   │        │
 │                  │  │     status, restart)          │   │        │
 │                  │  ├───────────────────────────────┤   │        │
-│                  │  │    MessageHandlers            │   │        │
-│                  │  │    (text, photo,              │   │        │
-│                  │  │     document, voice)          │   │        │
+│                  │  │    Text Handler               │   │        │
+│                  │  │    (on_text)                  │   │        │
 │                  │  └──────────────┬────────────────┘   │        │
 │                  │                 │                    │        │
 │                  │  ┌──────────────┴────────────────┐   │        │
-│                  │  │    SessionStore               │   │        │
-│                  │  │    (dict in memoria)          │   │        │
+│                  │  │    MediaHandler               │   │        │
+│                  │  │    (photo, document, voice)   │   │        │
 │                  │  └───────────────────────────────┘   │        │
+│                  │                                      │        │
+│                  │  ┌──────────────┐ ┌──────────────┐   │        │
+│                  │  │ SessionStore │ │ Utils        │   │        │
+│                  │  │ (dict mem)   │ │ (send_reply, │   │        │
+│                  │  │              │ │  check_auth, │   │        │
+│                  │  │              │ │  typing)     │   │        │
+│                  │  └──────────────┘ └──────────────┘   │        │
 │                  └───────────────────────────────────────┘        │
 └───────────────────────────────────────────────────────────────────┘
            │                            │
@@ -52,20 +58,17 @@ System architecture documentation for the OpenCode Personal Agent Telegram bot.
 │  │  ┌────────────────────────────────────────────┐  │   │
 │  │  │  .opencode/opencode.json                   │  │   │
 │  │  │  - default_agent: build                    │  │   │
-│  │  │  - 14 agents (build, plan, review, etc.)   │  │   │
+│  │  │  - 8 agents (build, plan, review, etc.)    │  │   │
 │  │  │  - model assignments per agent             │  │   │
 │  │  └────────────────────────────────────────────┘  │   │
 │  │  ┌────────────────────────────────────────────┐  │   │
 │  │  │  Plugins                                   │  │   │
 │  │  │  - superpowers                             │  │   │
 │  │  │  - @asidorenko/openslimedit                │  │   │
-│  │  │  - agents-opencode                         │  │   │
 │  │  └────────────────────────────────────────────┘  │   │
 │  │  ┌────────────────────────────────────────────┐  │   │
 │  │  │  Skills (auto-allowed)                     │  │   │
 │  │  │  - python, react-next, flutter, go, etc.   │  │   │
-│  │  │  - blogger, brutal-critic, legal-advisor   │  │   │
-│  │  │  - docs-validation, agent-diagnostics      │  │   │
 │  │  └────────────────────────────────────────────┘  │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
@@ -146,13 +149,13 @@ PTB Application setup.
 
 **Responsibilities:**
 - Create `Application` instance with bot token
-- Add auth middleware checking `ALLOWED_CHAT_ID`
 - Register all command and message handlers
+- Wire up `BotHandlers` (commands + text) and `MediaHandler` (photo, document, voice)
 - Configure graceful shutdown support
 
 ### `src/bot/handlers.py`
 
-All bot logic for commands and messages.
+Bot logic for commands and text messages.
 
 **Command handlers:**
 - `/start` — Welcome message
@@ -161,28 +164,42 @@ All bot logic for commands and messages.
 - `/status` — Server status
 - `/restart` — Restart server
 
-**Message handlers:**
-- Text messages — Forward to OpenCode
-- Photos — Download, send path to OpenCode
-- Documents — Download, send path to OpenCode
-- Voice — Transcribe locally, forward text
+**Text message handler:**
+- Forwards text to OpenCode via session API
 
 **Features:**
-- Typing indicator during processing
-- Error handling with user-facing messages
 - Rate limiting between messages
-- JSON response detection (plain text fallback)
+- Error handling with user-facing messages
+- Delegates photo/document/voice to MediaHandler
+
+### `src/bot/media_handler.py`
+
+Handles photo, document, and voice messages.
+
+**Handlers:**
+- Photos — Download to `storage/uploads/`, send to `file-parser` agent via CLI
+- Documents — Download to `storage/uploads/`, send to `file-parser` agent via CLI
+- Voice — Download OGG, transcribe with VoiceTranscriber, forward text to session
+
+**Features:**
+- File size limit enforcement
+- Typing indicator during processing
+- Auto-cleanup of downloaded files after processing
+- JSON response detection (plain text fallback for CLI responses)
+
+### `src/bot/utils.py`
+
+Utility functions for bot operations.
+
+**Functions:**
+- `send_reply()` — Split messages >4096 characters, quote original on first chunk
+- `check_auth()` — Verify user against `ALLOWED_CHAT_ID`
+- `typing_scope()` — Async context manager for typing indicator
+- JSON detection — Send JSON responses as plain text
 
 ### `src/bot/session.py`
 
 In-memory session store.
-
-**Implementation:**
-- `dict[int, str]` mapping chat_id to session_id
-- No persistence
-- Fresh state on restart
-
-### `src/bot/utils.py`
 
 Utility functions for bot operations.
 
@@ -197,6 +214,7 @@ Async HTTP client for OpenCode API.
 **Methods:**
 - `create_session(title, project_dir)` — POST `/session`
 - `send_message(session_id, text)` — POST `/session/{id}/message`
+- `send_message_cli(text, file_paths)` — Spawns `opencode run --agent file-parser` CLI subprocess for media file analysis (disposable session)
 - `delete_session(session_id)` — DELETE `/session/{id}`
 
 **Features:**
@@ -204,6 +222,7 @@ Async HTTP client for OpenCode API.
 - Basic Auth support
 - Streaming response handling
 - Event parsing (text, tool-use, errors)
+- JSON stream parsing for CLI subprocess responses
 
 ### `src/process/manager.py`
 
@@ -245,7 +264,7 @@ OpenCode agent configuration.
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/deepseek-v4-flash",
   "default_agent": "build",
-  "plugin": ["superpowers", "@asidorenko/openslimedit", "agents-opencode"],
+  "plugin": ["superpowers", "@asidorenko/openslimedit"],
   "agent": {
     "build": { "model": "opencode-go/deepseek-v4-flash" },
     "plan": { "model": "opencode-go/glm-5.1" },
@@ -259,8 +278,8 @@ OpenCode agent configuration.
 
 **Components:**
 - **Default agent:** `build`
-- **14 agents:** Each with dedicated model
-- **3 plugins:** superpowers, openslimedit, agents-opencode
+- **8 agents:** Each with dedicated model
+- **2 plugins:** superpowers, openslimedit
 - **Skills:** Auto-allowed via wildcard permission
 
 ### `.opencode/agents/`
@@ -286,7 +305,7 @@ User → Telegram → Bot Handler → Session Store → OpenCodeClient → OpenC
 ### Photo/Document Flow
 
 ```
-User → Telegram → Bot Handler → Download to storage/temp/ → OpenCodeClient (with path) → OpenCode Server → file-parser Agent → Response → Bot → Telegram → User
+User → Telegram → Bot Handler → Download to storage/uploads/ → OpenCodeClient.send_message_cli() → opencode run --agent file-parser → file-parser Agent → Response → Bot → Telegram → User
 ```
 
 ### Voice Message Flow
@@ -314,6 +333,7 @@ CLI start → Bootstrap → ProcessManager.start() → opencode serve subprocess
 | Agent-per-task specialization | Better results with focused agents. |
 | Auto-allowed skills | Flexibility for domain-specific guidance. |
 | Plugin-based architecture | Extensible AI capabilities. |
+| CLI subprocess for file analysis | Disposable sessions, no permission risk to main session. |
 
 ## Integration Points
 

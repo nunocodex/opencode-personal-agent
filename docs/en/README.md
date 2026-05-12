@@ -10,9 +10,9 @@ This Telegram bot forwards your messages to a local OpenCode server and returns 
 
 - **5 bot commands** for session and server management
 - **4 message types**: text, photo, document, voice
-- **14 specialized AI agents** for different tasks
+- **8 specialized AI agents** for different tasks
 - **20+ skills** for language-specific and domain-specific guidance
-- **3 OpenCode plugins** for enhanced capabilities
+- **2 OpenCode plugins** for enhanced capabilities
 - **100% local voice transcription** via faster-whisper
 - **Single-user security** with path traversal protection
 
@@ -51,34 +51,27 @@ python -m src.cli start
 
 ## Available Agents
 
-The bot uses OpenCode's multi-agent system with 14 specialized agents:
+The bot uses OpenCode's multi-agent system with 8 specialized agents:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `build` | deepseek-v4-flash | Build new features and code |
+| `build` | deepseek-v4-flash | Build new features and code (default) |
 | `plan` | glm-5.1 | Architecture and implementation planning |
 | `explore` | deepseek-v4-flash | Explore and understand codebases |
-| `scout` | qwen3.6-plus | Find specific files and patterns |
-| `orchestrator` | kimi-k2.6 | Coordinate complex multi-step tasks |
-| `planner` | glm-5.1 | Create detailed implementation plans |
-| `codebase` | kimi-k2.6 | Modify and extend existing code |
+| `debug` | glm-5.1 | Systematic debugging and root cause analysis |
 | `review` | glm-5.1 | Code review and security analysis |
-| `docs` | qwen3.5-plus | Generate documentation |
-| `em-advisor` | qwen3.6-plus | Engineering management advice |
-| `blogger` | qwen3.5-plus | Write blog posts and content |
-| `brutal-critic` | glm-5.1 | Critical review and feedback |
-| `legal-advisor` | glm-5.1 | Legal and compliance guidance |
+| `docs` | deepseek-v4-flash | Generate documentation |
 | `file-parser` | kimi-k2.6 | Analyze images, documents, video |
+| `general` | deepseek-v4-flash | General-purpose research and multi-step tasks |
 
 ## Plugins
 
-Three OpenCode plugins extend the bot's capabilities:
+Two OpenCode plugins extend the bot's capabilities:
 
 | Plugin | Description |
 |--------|-------------|
 | `superpowers` | Enhanced AI capabilities and advanced tools |
 | `@asidorenko/openslimedit` | Efficient file editing operations |
-| `agents-opencode` | Multi-agent orchestration system |
 
 ## Skills
 
@@ -129,6 +122,13 @@ Send to bot: "Review this code for security vulnerabilities and suggest improvem
 Agent: review
 ```
 
+### Debugging
+
+```
+Send to bot: "Investigate why the API endpoint returns 500 errors"
+Agent: debug
+```
+
 ### Documentation
 
 ```
@@ -141,20 +141,6 @@ Agent: docs
 ```
 Send to bot: [attach image] "Analyze this screenshot and extract the text"
 Agent: file-parser
-```
-
-### Content Creation
-
-```
-Send to bot: "Write a LinkedIn post about launching my new open source project"
-Agent: blogger
-```
-
-### Legal Guidance
-
-```
-Send to bot: "What licenses should I consider for an open source AI tool?"
-Agent: legal-advisor
 ```
 
 ## Bot Commands
@@ -213,7 +199,8 @@ opencode-personal-agent/
 ├── storage/
 │   ├── logs/
 │   ├── models/              # HF cache for faster-whisper
-│   └── temp/                # Staging downloads (auto-cleaned)
+│   ├── temp/                # Staging downloads (auto-cleaned)
+│   └── uploads/             # User uploaded files (auto-cleaned)
 ├── tests/
 ├── docs/
 │   ├── en/                  # English documentation

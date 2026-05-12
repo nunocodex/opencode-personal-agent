@@ -4,7 +4,7 @@ Riferimento completo per tutti gli agenti, plugin e skill OpenCode disponibili n
 
 ## Agenti
 
-Il bot utilizza il sistema multi-agente di OpenCode con 14 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato.
+Il bot utilizza il sistema multi-agente di OpenCode con 8 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato.
 
 ### Configurazione Agenti
 
@@ -14,20 +14,14 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 
 | Agente | Modello | Scopo | Quando Usare |
 |--------|---------|-------|--------------|
-| `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice | Creare nuovo codice, implementare feature |
+| `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice | Creare nuovo codice, implementare feature (default) |
 | `plan` | glm-5.1 | Pianificazione architettura e implementazione | Pianificazione alto livello, system design |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase | Comprendere codice esistente, trovare pattern |
-| `scout` | qwen3.6-plus | Trovare file e pattern specifici | Localizzare file, cercare nelle codebase |
-| `orchestrator` | kimi-k2.6 | Coordinare compiti complessi multi-step | Refactoring grandi, modifiche multi-file |
-| `planner` | glm-5.1 | Creare piani di implementazione dettagliati | Pianificazione implementazione step-by-step |
-| `codebase` | kimi-k2.6 | Modificare ed estendere codice esistente | Aggiungere feature a codice esistente |
+| `debug` | glm-5.1 | Debug sistematico e analisi cause radice | Investigare bug, test falliti, comportamento inaspettato |
 | `review` | glm-5.1 | Revisione codice e analisi sicurezza | Revisionare codice, trovare vulnerabilità |
-| `docs` | qwen3.5-plus | Generare documentazione | Scrivere API docs, file README |
-| `em-advisor` | qwen3.6-plus | Consulenza engineering management | Processi team, struttura progetto |
-| `blogger` | qwen3.5-plus | Scrivere post blog e contenuti | Creazione contenuti, post social media |
-| `brutal-critic` | glm-5.1 | Revisione critica e feedback | Critica onesta ma costruttiva |
-| `legal-advisor` | glm-5.1 | Guida legale e compliance | Licensing, GDPR, domande legali |
+| `docs` | deepseek-v4-flash | Generare documentazione | Scrivere API docs, file README |
 | `file-parser` | kimi-k2.6 | Analizzare immagini, documenti, video | Analisi file, OCR, estrazione contenuti |
+| `general` | deepseek-v4-flash | Ricerca generica e task multi-step | Domande complesse, esplorazione aperta |
 
 ### Esempi di Utilizzo per Agente
 
@@ -64,49 +58,16 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 
 **Risposta attesa:** Analisi codebase, spiegazioni flussi, posizioni file chiave.
 
-#### scout
+#### debug
 
-**Scopo:** Trovare file e pattern specifici nelle codebase.
-
-**Prompt di esempio:**
-- "Find all files related to database configuration"
-- "Locate all TODO comments in the codebase"
-- "Find where the email sending logic is implemented"
-
-**Risposta attesa:** Percorsi file, numeri di riga, snippet codice.
-
-#### orchestrator
-
-**Scopo:** Coordinare compiti complessi multi-step.
+**Scopo:** Debug sistematico e analisi causa radice.
 
 **Prompt di esempio:**
-- "I need to refactor my bot handlers - coordinate the full plan"
-- "Migrate this project from JavaScript to TypeScript"
-- "Upgrade all dependencies and fix breaking changes"
+- "Investigate why the API endpoint returns 500 errors"
+- "Find the root cause of this test failure"
+- "Debug the memory leak in the background worker"
 
-**Risposta attesa:** Flusso di lavoro multi-agente coordinato, breakdown compiti.
-
-#### planner
-
-**Scopo:** Creare piani di implementazione dettagliati.
-
-**Prompt di esempio:**
-- "Create a detailed implementation plan for adding user authentication"
-- "Plan the steps to add caching to this API"
-- "Create a roadmap for adding dark mode to the UI"
-
-**Risposta attesa:** Piano di implementazione step-by-step con priorità.
-
-#### codebase
-
-**Scopo:** Modificare ed estendere codice esistente.
-
-**Prompt di esempio:**
-- "Add a new command handler for /stats that shows usage statistics"
-- "Implement rate limiting for the API endpoints"
-- "Add input validation to the user registration form"
-
-**Risposta attesa:** Modifiche codice con spiegazioni.
+**Risposta attesa:** Analisi causa radice con evidenze, passi riproduzione, raccomandazioni fix.
 
 #### review
 
@@ -130,52 +91,6 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 
 **Risposta attesa:** Documentazione ben strutturata in markdown o docstring.
 
-#### em-advisor
-
-**Scopo:** Consulenza engineering management.
-
-**Prompt di esempio:**
-- "What's the best way to structure a Python async project?"
-- "How should I organize my team's code review process?"
-- "What metrics should I track for my SaaS application?"
-
-**Risposta attesa:** Best practices, consigli organizzativi, raccomandazioni.
-
-#### blogger
-
-**Scopo:** Scrivere post blog e contenuti.
-
-**Prompt di esempio:**
-- "Write a blog post about how I built this Telegram AI bot"
-- "Create a LinkedIn post announcing my new open source project"
-- "Write a technical tutorial on async Python programming"
-
-**Risposta attesa:** Contenuti coinvolgenti e ben strutturati, pronti per la pubblicazione.
-
-#### brutal-critic
-
-**Scopo:** Revisione critica e feedback.
-
-**Prompt di esempio:**
-- "Critique my project README and suggest improvements"
-- "Review my blog post draft and be brutally honest"
-- "Analyze my code and tell me what's wrong with it"
-
-**Risposta attesa:** Critica onesta e diretta con miglioramenti azionabili.
-
-#### legal-advisor
-
-**Scopo:** Guida legale e compliance.
-
-**Prompt di esempio:**
-- "What licenses should I consider for an open source AI tool?"
-- "What are GDPR requirements for user data collection?"
-- "Do I need a privacy policy for my SaaS?"
-
-**Risposta attesa:** Guida legale, requisiti compliance, raccomandazioni.
-
-**Disclaimer:** Questo agente fornisce guida informativa only, non consulenza legale.
-
 #### file-parser
 
 **Scopo:** Analizzare allegati file (immagini, documenti, video).
@@ -198,9 +113,20 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 - Non può modificare file o eseguire comandi (imposto: `edit: deny`, `bash: deny`, `skill: deny all`)
 - Nota contenuti sensibili senza esporli
 
+#### general
+
+**Scopo:** Ricerca generica e task complessi multi-step.
+
+**Prompt di esempio:**
+- "Research the best Python libraries for async web scraping"
+- "Compare PostgreSQL vs SQLite for a single-user desktop app"
+- "Explain the differences between asyncio and threading in Python"
+
+**Risposta attesa:** Analisi completa con trade-off e raccomandazioni.
+
 ## Plugin
 
-Tre plugin OpenCode estendono le capacità del bot:
+Due plugin OpenCode estendono le capacità del bot:
 
 ### superpowers
 
@@ -223,17 +149,6 @@ Tre plugin OpenCode estendono le capacità del bot:
 - Rischio ridotto di introdurre bug
 
 **Quando usato:** Automaticamente usato dagli agenti quando modificano file.
-
-### agents-opencode
-
-**Descrizione:** Sistema di orchestrazione multi-agente.
-
-**Funzionalità:**
-- Selezione agente basata sul tipo di compito
-- Collaborazione multi-agente
-- Routing compiti ad agenti specializzati
-
-**Quando usato:** Automaticamente instrada i compiti agli agenti appropriati.
 
 ## Skill
 
@@ -261,21 +176,13 @@ Le skill forniscono guida specifica per dominio e best practices. Tutte le skill
 | `sql-migrations` | Modifiche schema database | "Write a safe migration to add an index" |
 | `ux-responsive` | Design UX responsive | "Make this component responsive for mobile" |
 
-### Skill Contenuti
-
-| Skill | Dominio | Esempio Utilizzo |
-|-------|---------|------------------|
-| `career-content` | Resume, LinkedIn, lettere | "Optimize my resume for ATS systems" |
-| `blogger` | Creazione contenuti | "Write a LinkedIn post about this project" |
-| `brutal-critic` | Revisione contenuti | "Review my blog post draft" |
-
-### Skill Professionali
-
-| Skill | Dominio | Esempio Utilizzo |
-|-------|---------|------------------|
-| `legal-advisor` | Ricerca legale e compliance | "What GDPR rules apply to my SaaS?" |
-
 ### Skill di Sviluppo
+
+| Skill | Dominio | Esempio Utilizzo |
+|-------|---------|------------------|
+| `docs-validation` | Controlli qualità documentazione | "Check our docs for broken links" |
+| `agent-diagnostics` | Validazione setup agenti | "Check my OpenCode config for issues" |
+| `project-bootstrap` | Scaffold progetto | "Create AGENTS.md for a new project" |
 
 | Skill | Dominio | Esempio Utilizzo |
 |-------|---------|------------------|
@@ -393,44 +300,6 @@ Atteso: CSS/media queries o modifiche componente
 per design responsive mobile-first.
 ```
 
-#### career-content
-
-```
-Prompt: "Optimize my resume for ATS systems"
-
-Atteso: Formattazione resume e ottimizzazione keyword
-per Applicant Tracking Systems.
-```
-
-#### blogger
-
-```
-Prompt: "Write a LinkedIn post about launching my project"
-
-Atteso: Contenuti social media coinvolgenti con formattazione
-appropriata e call-to-action.
-```
-
-#### brutal-critic
-
-```
-Prompt: "Review my README and be brutally honest"
-
-Atteso: Feedback diretto e onesto con suggerimenti
-di miglioramento specifici.
-```
-
-#### legal-advisor
-
-```
-Prompt: "What GDPR rules apply to my SaaS application?"
-
-Atteso: Requisiti compliance GDPR, linee guida gestione dati,
-e considerazioni legali.
-
-Disclaimer: Guida informativa only, non consulenza legale.
-```
-
 #### docs-validation
 
 ```
@@ -465,8 +334,6 @@ Il bot utilizza l'agente `build` di default. Per usare un agente specifico, menz
 ```
 "Using the review agent: please analyze this code for security issues"
 ```
-
-Oppure lascia che l'orchestrator selezioni automaticamente l'agente migliore per il tuo compito.
 
 ## Selezione Skill
 

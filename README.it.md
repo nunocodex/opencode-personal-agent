@@ -12,7 +12,7 @@
 - **Ciclo di vita asincrono** — avvia/ferma/riavvia `opencode serve`
 - **Sicurezza prima di tutto** — protezione path traversal, blocklist file sensibili, autenticazione singolo utente
 - **68 test, 84% copertura**
-- **14 agenti AI specializzati** per diversi compiti (build, plan, review, docs, legal, ecc.)
+- **8 agenti AI specializzati** per diversi compiti (build, plan, review, docs, explore, ecc.)
 - **20+ skill** per guida specifica per linguaggio (Python, React, Flutter, Go, Rust, ecc.)
 
 ## Avvio Rapido
@@ -46,7 +46,7 @@ opencode-personal-agent/
 │   ├── opencode/  # Client HTTP OpenCode
 │   ├── process/   # Gestore del processo
 │   └── voice/     # Trascrittore vocale
-├── storage/       # Dati runtime (log, modelli, temp)
+├── storage/       # Dati runtime (log, modelli, temp, uploads)
 ├── tests/         # Suite pytest
 ├── docs/          # Documentazione (en/it)
 ├── .opencode/     # Configurazione agenti OpenCode
@@ -55,32 +55,25 @@ opencode-personal-agent/
 
 ## Plugin
 
-Il bot utilizza OpenCode con tre plugin installati:
+Il bot utilizza OpenCode con due plugin installati:
 
 | Plugin | Scopo |
 |--------|-------|
 | `superpowers` | Capacità e strumenti AI avanzati |
 | `@asidorenko/openslimedit` | Operazioni di modifica file efficienti |
-| `agents-opencode` | Sistema di orchestrazione multi-agente |
 
 ## Agenti Disponibili
 
 | Agente | Modello | Caso d'Uso |
 |--------|---------|------------|
-| `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice |
+| `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice (default) |
 | `plan` | glm-5.1 | Pianificazione architettura e implementazione |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase |
-| `scout` | qwen3.6-plus | Trovare file e pattern specifici |
-| `orchestrator` | kimi-k2.6 | Coordinare compiti complessi multi-step |
-| `planner` | glm-5.1 | Creare piani di implementazione dettagliati |
-| `codebase` | kimi-k2.6 | Modificare ed estendere codice esistente |
+| `debug` | glm-5.1 | Debug sistematico e analisi cause |
 | `review` | glm-5.1 | Revisione codice e analisi sicurezza |
-| `docs` | qwen3.5-plus | Generare documentazione |
-| `em-advisor` | qwen3.6-plus | Consulenza engineering management |
-| `blogger` | qwen3.5-plus | Scrivere post blog e contenuti |
-| `brutal-critic` | glm-5.1 | Revisione critica e feedback |
-| `legal-advisor` | glm-5.1 | Guida legale e compliance |
+| `docs` | deepseek-v4-flash | Generare documentazione |
 | `file-parser` | kimi-k2.6 | Analizzare immagini, documenti, video |
+| `general` | deepseek-v4-flash | Ricerca generica e task multi-step |
 
 ## Esempi di Utilizzo
 
@@ -89,16 +82,9 @@ Il bot utilizza OpenCode con tre plugin installati:
 | Costruire CLI | "Build a new Python CLI tool for task management" |
 | Pianificare architettura | "Plan the architecture for a microservice that processes invoices" |
 | Esplorare codebase | "Explore this codebase and tell me how authentication works" |
-| Trovare file | "Find all files related to database configuration" |
-| Coordinare refactoring | "I need to refactor my bot handlers - coordinate the full plan" |
-| Piano implementazione | "Create a detailed implementation plan for adding user authentication" |
-| Aggiungere feature | "Add a new command handler for /stats that shows usage statistics" |
+| Debug problema | "Investigate why the bot crashes on voice messages" |
 | Code review | "Review this pull request for security issues" |
 | Generare docs | "Generate API documentation for the OpenCode client module" |
-| Consulenza engineering | "What's the best way to structure a Python async project?" |
-| Scrivere blog | "Write a blog post about how I built this Telegram AI bot" |
-| Criticare README | "Critique my project README and suggest improvements" |
-| Domande legali | "What licenses should I consider for an open source AI tool?" |
 | Analizzare immagine | Invia una foto e chiedi "Analyze this image and describe its contents" |
 
 ## Test
