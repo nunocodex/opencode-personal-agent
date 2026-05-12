@@ -159,6 +159,82 @@ class TestMediaHandler:
         await media.on_document(mock_update, mock_context)
         media.client.send_message_cli.assert_awaited_once()
 
+    async def test_on_photo_prompt_no_delegation(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
+        photo = MagicMock()
+        photo.file_id = "photo-id"
+        photo.file_size = 1024
+        mock_update.effective_message.photo = [photo]
+        mock_update.effective_message.caption = "test caption"
+        file_mock = MagicMock()
+        file_mock.download_to_drive = AsyncMock()
+        mock_context.bot.get_file = AsyncMock(return_value=file_mock)
+        media.client.send_message_cli = AsyncMock(return_value="description")
+        await media.on_photo(mock_update, mock_context)
+        prompt = media.client.send_message_cli.call_args[0][0]
+        assert "attached" in prompt.lower()
+
+    async def test_on_photo_passes_file_paths(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
+        photo = MagicMock()
+        photo.file_id = "photo-id"
+        photo.file_size = 1024
+        mock_update.effective_message.photo = [photo]
+        mock_update.effective_message.caption = ""
+        file_mock = MagicMock()
+        file_mock.download_to_drive = AsyncMock()
+        mock_context.bot.get_file = AsyncMock(return_value=file_mock)
+        media.client.send_message_cli = AsyncMock(return_value="description")
+        await media.on_photo(mock_update, mock_context)
+        kwargs = media.client.send_message_cli.call_args[1]
+        assert "file_paths" in kwargs
+        assert len(kwargs["file_paths"]) == 1
+
+    async def test_on_photo_paths_uses_safe_path(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
+        photo = MagicMock()
+        photo.file_id = "photo-id"
+        photo.file_size = 1024
+        mock_update.effective_message.photo = [photo]
+        mock_update.effective_message.caption = "test caption"
+        file_mock = MagicMock()
+        file_mock.download_to_drive = AsyncMock()
+        mock_context.bot.get_file = AsyncMock(return_value=file_mock)
+        media.client.send_message_cli = AsyncMock(return_value="description")
+        await media.on_photo(mock_update, mock_context)
+        kwargs = media.client.send_message_cli.call_args[1]
+        path = kwargs["file_paths"][0]
+        assert "uploads" in path
+        assert path.endswith(".jpg")
+
+    async def test_on_document_prompt_no_delegation(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
+        doc = MagicMock()
+        doc.file_id = "doc-id"
+        doc.file_name = "report.pdf"
+        doc.file_size = 1024
+        mock_update.effective_message.document = doc
+        mock_update.effective_message.caption = "analyze this"
+        file_mock = MagicMock()
+        file_mock.download_to_drive = AsyncMock()
+        mock_context.bot.get_file = AsyncMock(return_value=file_mock)
+        media.client.send_message_cli = AsyncMock(return_value="summary")
+        await media.on_document(mock_update, mock_context)
+        prompt = media.client.send_message_cli.call_args[0][0]
+        assert "attached" in prompt.lower()
+
+    async def test_on_document_passes_file_paths(self, media: MediaHandler, mock_update: MagicMock, mock_context: MagicMock) -> None:
+        doc = MagicMock()
+        doc.file_id = "doc-id"
+        doc.file_name = "report.pdf"
+        doc.file_size = 1024
+        mock_update.effective_message.document = doc
+        mock_update.effective_message.caption = ""
+        file_mock = MagicMock()
+        file_mock.download_to_drive = AsyncMock()
+        mock_context.bot.get_file = AsyncMock(return_value=file_mock)
+        media.client.send_message_cli = AsyncMock(return_value="summary")
+        await media.on_document(mock_update, mock_context)
+        kwargs = media.client.send_message_cli.call_args[1]
+        assert "file_paths" in kwargs
+        assert len(kwargs["file_paths"]) == 1
+
 
 class TestAuthCheck:
     """Verify per-handler auth blocks unauthorized users."""
