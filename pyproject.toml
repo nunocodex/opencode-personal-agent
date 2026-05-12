@@ -7,6 +7,23 @@ name = "opencode-personal-agent"
 version = "0.2.0"
 description = "Telegram bot interface for OpenCode serve"
 requires-python = ">=3.12"
+authors = [
+    { name = "Ricardo Pereira", email = "nunocodex@gmail.com" },
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Communications :: Chat",
+]
+
+[project.urls]
+Homepage = "https://github.com/nunocodex/opencode-personal-agent"
+Source = "https://github.com/nunocodex/opencode-personal-agent"
+Issues = "https://github.com/nunocodex/opencode-personal-agent/issues"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

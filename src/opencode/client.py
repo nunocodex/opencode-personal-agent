@@ -88,16 +88,15 @@ class OpenCodeClient:
         self,
         text: str,
         *,
+        file_paths: list[str] | None = None,
         timeout: int = 300,
     ) -> str:
-        """Send a message via `opencode run` CLI to get full agent context (tools, subagents).
+        """Send a message to the file-parser agent via `opencode run` CLI.
 
-        Unlike send_message() (REST API), this spawns the opencode CLI which
-        gives the session access to the full system prompt including subagent
-        definitions and the task() tool — same as the interactive opencode chat.
-
-        Each call creates a disposable session — no session_id needed since
-        REST API sessions are not accessible from the CLI.
+        Uses --agent file-parser to invoke the restricted read-only agent directly,
+        avoiding delegation through the default build agent (which has edit/bash
+        permissions). File paths are attached via --file for direct multimodal access.
+        Each call creates a disposable session.
         """
         exe = shutil.which("opencode") or shutil.which("opencode.cmd")
         if not exe:
@@ -108,10 +107,14 @@ class OpenCodeClient:
         # to preserve the full message structure.
         cmd = [
             exe, "run", "--format", "json",
+            "--agent", "file-parser",
             "--title", "Bot file analysis",
             "--dir", str(Path(self._project_dir).resolve()),
-            "-",  # Read message from stdin
         ]
+        if file_paths:
+            for fp in file_paths:
+                cmd.extend(["--file", fp])
+        cmd.extend(["-"])  # Read message from stdin
 
         print("[opencode] spawning CLI subprocess")
 

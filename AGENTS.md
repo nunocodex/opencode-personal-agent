@@ -52,8 +52,8 @@ CLI → Bootstrap (checks) → main.py → PTB Bot App
 
 ## Known Gotchas
 
-- **CLI photo/document flow**: `opencode run --format json` may return tool-use error events instead of text events (e.g. when `file-parser` can't access the file). The raw JSON falls through to `send_reply()` and crashes Telegram's Markdown parser. `send_reply()` detects JSON responses (starts with `{` or `[`) and sends them as plain text.
-- **`opencode run` permissions**: the CLI auto-rejects tool calls in non-interactive mode. The `file-parser` agent needs file access but `bash` tool calls are auto-denied. This is a known limitation — do not add `--dangerously-skip-permissions` without explicit approval.
+- **CLI photo/document flow**: `opencode run --agent file-parser --format json` invokes the read-only agent directly. May still return raw JSON on errors — `send_reply()` detects JSON responses (starts with `{` or `[`) and sends them as plain text.
+- **`file-parser` permissions**: explicitly denied (`edit: deny`, `bash: deny`, `skill: deny all`) — no file modification or command execution possible. Media files are downloaded to `storage/uploads/` and deleted after analysis.
 
 ## Storage
 

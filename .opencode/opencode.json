@@ -1,27 +1,93 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "opencode-go/qwen3.6-plus",
-  "default_agent": "orchestrator",
+  "model": "opencode-go/deepseek-v4-flash",
+  "default_agent": "build",
   "plugin": [
-    "superpowers",
-    "@asidorenko/openslimedit",
-    "agents-opencode"
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "@asidorenko/openslimedit"
   ],
   "agent": {
-    "build": { "model": "opencode-go/kimi-k2.6" },
-    "plan": { "model": "opencode-go/glm-5.1" },
-    "explore": { "model": "opencode-go/deepseek-v4-flash" },
-    "scout": { "model": "opencode-go/qwen3.6-plus" },
-    "orchestrator": { "model": "opencode-go/qwen3.6-plus" },
-    "planner": { "model": "opencode-go/glm-5.1" },
-    "codebase": { "model": "opencode-go/kimi-k2.6" },
-    "review": { "model": "opencode-go/glm-5.1" },
-    "docs": { "model": "opencode-go/qwen3.5-plus" },
-    "em-advisor": { "model": "opencode-go/qwen3.6-plus" },
-    "blogger": { "model": "opencode-go/qwen3.5-plus" },
-    "brutal-critic": { "model": "opencode-go/glm-5.1" },
-    "legal-advisor": { "model": "opencode-go/glm-5.1" },
-    "file-parser": { "model": "opencode-go/kimi-k2.6" }
+    "plan": {
+      "description": "Designs implementation plans from specifications. Read-only, never modifies code.",
+      "mode": "primary",
+      "model": "opencode-go/glm-5.1",
+      "color": "#2196F3",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "deny",
+          "writing-plans": "allow"
+        }
+      }
+    },
+    "build": {
+      "description": "Implements code, runs tests, follows plans with TDD and verification.",
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-flash",
+      "color": "#4CAF50",
+      "permission": {
+        "skill": {
+          "*": "deny",
+          "test-driven-development": "allow",
+          "verification-before-completion": "allow",
+          "executing-plans": "allow"
+        }
+      }
+    },
+    "debug": {
+      "description": "Investigates root cause of bugs using a systematic 4-phase method. No fix without diagnosis.",
+      "mode": "primary",
+      "model": "opencode-go/glm-5.1",
+      "color": "#FF5722",
+      "permission": {
+        "edit": "ask",
+        "skill": {
+          "*": "deny",
+          "systematic-debugging": "allow"
+        }
+      }
+    },
+    "review": {
+      "description": "Reviews code for bugs, security issues, and best practices. Read-only.",
+      "mode": "primary",
+      "model": "opencode-go/glm-5.1",
+      "temperature": 0.1,
+      "color": "#9C27B0",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "deny",
+          "requesting-code-review": "allow"
+        }
+      }
+    },
+    "docs": {
+      "description": "Writes and maintains project documentation, docstrings, README, and API docs.",
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.2,
+      "color": "#607D8B",
+      "permission": {
+        "edit": "allow",
+        "bash": "deny"
+      }
+    },
+    "file-parser": {
+      "description": "Analyzes images, documents, and media files. Read-only: extracts text, describes content, summarizes documents. No code execution or file modification.",
+      "mode": "primary",
+      "model": "opencode-go/kimi-k2.6",
+      "temperature": 0.2,
+      "color": "#FF9800",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "deny"
+        }
+      }
+    }
   },
   "permission": {
     "skill": {

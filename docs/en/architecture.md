@@ -1,73 +1,128 @@
 # Architecture
 
+System architecture documentation for the OpenCode Personal Agent Telegram bot.
+
 ## Overview
 
 ```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Telegram Bot                              │
+│                                                                   │
+│  ┌──────────┐    ┌──────────┐    ┌────────────────────────┐     │
+│  │   CLI    │───▶│ Bootstrap│───▶│   PTB Application      │     │
+│  │ (check,  │    │ (checks, │    │   (handlers, auth)     │     │
+│  │  setup,  │    │ cleanup) │    └──────────┬─────────────┘     │
+│  │  start,  │    └──────────┘               │                   │
+│  │  test)   │                               │                   │
+│  └──────────┘    ┌──────────────────────────┼──────────┐        │
+│                  │      BotHandlers          │          │        │
+│                  │  ┌───────────────────────┴───────┐   │        │
+│                  │  │    CommandHandler             │   │        │
+│                  │  │    (start, help, new,         │   │        │
+│                  │  │     status, restart)          │   │        │
+│                  │  ├───────────────────────────────┤   │        │
+│                  │  │    MessageHandlers            │   │        │
+│                  │  │    (text, photo,              │   │        │
+│                  │  │     document, voice)          │   │        │
+│                  │  └──────────────┬────────────────┘   │        │
+│                  │                 │                    │        │
+│                  │  ┌──────────────┴────────────────┐   │        │
+│                  │  │    SessionStore               │   │        │
+│                  │  │    (dict in memoria)          │   │        │
+│                  │  └───────────────────────────────┘   │        │
+│                  └───────────────────────────────────────┘        │
+└───────────────────────────────────────────────────────────────────┘
+           │                            │
+           ▼                            ▼
+┌──────────────────────┐    ┌──────────────────────────────┐
+│   OpenCodeClient     │    │    ProcessManager            │
+│   (httpx async)      │    │  (opencode serve subprocess) │
+│   - create session   │    │  - start/stop/restart        │
+│   - send message     │    │  - health check              │
+│   - delete session   │    │  - uptime tracking           │
+└──────────┬───────────┘    └──────────────┬───────────────┘
+           │                               │
+           ▼                               ▼
 ┌─────────────────────────────────────────────────────────┐
-│                     Telegram Bot                         │
-│                                                         │
-│  ┌──────────┐   ┌──────────┐   ┌────────────────────┐  │
-│  │  CLI     │──▶│ Bootstrap│──▶│  PTB Application   │  │
-│  │  (check, │   │ (checks, │   │  (handlers, auth)  │  │
-│  │  setup,  │   │  cleanup) │   └───────┬────────────┘  │
-│  │  start,  │   └──────────┘           │                │
-│  │  test)   │                          │                │
-│  └──────────┘          ┌───────────────┼──────────┐     │
-│                        │  BotHandlers   │          │     │
-│                        │ ┌─────────────┴──────┐   │     │
-│                        │ │  CommandHandler    │   │     │
-│                        │ │  (start, help,     │   │     │
-│                        │ │   new, status,     │   │     │
-│                        │ │   restart)         │   │     │
-│                        │ ├────────────────────┤   │     │
-│                        │ │  MessageHandlers   │   │     │
-│                        │ │  (text, photo,     │   │     │
-│                        │ │   document, voice) │   │     │
-│                        │ └────────┬───────────┘   │     │
-│                        │          │               │     │
-│                        │ ┌────────┴───────────┐   │     │
-│                        │ │   SessionStore     │   │     │
-│                        │ │   (dict in memoria) │   │     │
-│                        │ └────────────────────┘   │     │
-│                        └──────────────────────────┘     │
+│                   OpenCode Server                        │
+│              (http://127.0.0.1:4096)                     │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              Agent Configuration                  │   │
+│  │  ┌────────────────────────────────────────────┐  │   │
+│  │  │  .opencode/opencode.json                   │  │   │
+│  │  │  - default_agent: build                    │  │   │
+│  │  │  - 14 agents (build, plan, review, etc.)   │  │   │
+│  │  │  - model assignments per agent             │  │   │
+│  │  └────────────────────────────────────────────┘  │   │
+│  │  ┌────────────────────────────────────────────┐  │   │
+│  │  │  Plugins                                   │  │   │
+│  │  │  - superpowers                             │  │   │
+│  │  │  - @asidorenko/openslimedit                │  │   │
+│  │  │  - agents-opencode                         │  │   │
+│  │  └────────────────────────────────────────────┘  │   │
+│  │  ┌────────────────────────────────────────────┐  │   │
+│  │  │  Skills (auto-allowed)                     │  │   │
+│  │  │  - python, react-next, flutter, go, etc.   │  │   │
+│  │  │  - blogger, brutal-critic, legal-advisor   │  │   │
+│  │  │  - docs-validation, agent-diagnostics      │  │   │
+│  │  └────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
-         │                          │
-         ▼                          ▼
-┌─────────────────┐    ┌──────────────────────────┐
-│  OpenCodeClient │    │    ProcessManager         │
-│  (httpx)        │    │  (opencode serve subproc) │
-│  - create sess  │    │  - start/stop/restart     │
-│  - send msg     │    │  - health check           │
-│  - delete sess  │    │  - uptime tracking        │
-└────────┬────────┘    └────────────┬─────────────┘
-         │                          │
-         ▼                          ▼
-┌──────────────────────────────────────────────┐
-│              OpenCode Server                  │
-│           (http://127.0.0.1:4096)             │
-└──────────────────────────────────────────────┘
 
-┌──────────────────┐
-│  VoiceTranscriber │
-│  (faster-whisper) │
-│  - model "small"  │
-│  - CPU, int8      │
-│  - HF_HOME cache  │
-│    in storage/    │
-└──────────────────┘
+┌──────────────────────┐
+│  VoiceTranscriber    │
+│  (faster-whisper)    │
+│  - model "small"     │
+│  - CPU, int8         │
+│  - HF_HOME cache     │
+│    in storage/       │
+└──────────────────────┘
 ```
 
 ## Component Breakdown
 
 ### `src/config.py`
-Immutable `Config` dataclass loaded from environment variables. Validates token format (`\d+:[A-Za-z0-9_-]+`), parses integers, applies defaults.
+
+Immutable `Config` dataclass loaded from environment variables.
+
+**Responsibilities:**
+- Parse environment variables
+- Validate token format (`\d+:[A-Za-z0-9_-]+`)
+- Apply defaults for optional values
+- Freeze configuration after load
+
+**Configuration values:**
+- `telegram_bot_token` — Required
+- `allowed_chat_id` — Required
+- `opencode_project_dir` — Required
+- `opencode_server_url` — Required
+- `opencode_server_username` — Default: `opencode`
+- `opencode_server_password` — Optional
+- `whisper_language` — Default: `auto`
+- `max_file_size` — Default: 52428800 (50MB)
+- `rate_limit_seconds` — Default: 2.0
 
 ### `src/security.py`
-- `safe_path(filename, base_dir)` — resolves path and blocks traversal
-- `is_sensitive(filename)` — checks against blocklist of sensitive file patterns
+
+Security utilities for file operations.
+
+**Functions:**
+- `safe_path(filename, base_dir)` — Resolves path and blocks traversal
+- `is_sensitive(filename)` — Checks against sensitive file blocklist
+
+**Blocklist patterns:**
+- `.env`, `.env.local`, `.env.*`
+- `.ssh/`, `id_rsa`, `id_ed25519`, `authorized_keys`
+- `.pem`, `.key`, `.p12`, `.pfx`
+- `credentials`, `secrets`, `secret`, `token`
+- `.aws/`, `.docker/`, `.netrc`, `.htpasswd`
 
 ### `src/bootstrap.py`
-Pre-flight checks at startup:
+
+Pre-flight checks at startup.
+
+**Checks:**
 - Python 3.12+ validation
 - `.env` file existence
 - Config loading and validation
@@ -76,49 +131,175 @@ Pre-flight checks at startup:
 - Temp file cleanup (>1h old)
 
 ### `src/cli.py`
-Argparse-based CLI with subcommands:
-- `check` — run bootstrap validation
-- `setup` — create `.env` and storage dirs
-- `start` — launch bot
-- `test` — run pytest with coverage
+
+Argparse-based CLI with subcommands.
+
+**Commands:**
+- `check` — Run bootstrap validation
+- `setup` — Create `.env` and storage directories
+- `start` — Launch bot
+- `test` — Run pytest with coverage
 
 ### `src/bot/app.py`
-PTB Application setup:
-- Auth middleware checking `ALLOWED_CHAT_ID`
-- Registration of all command and message handlers
-- Graceful shutdown support
+
+PTB Application setup.
+
+**Responsibilities:**
+- Create `Application` instance with bot token
+- Add auth middleware checking `ALLOWED_CHAT_ID`
+- Register all command and message handlers
+- Configure graceful shutdown support
 
 ### `src/bot/handlers.py`
-All bot logic:
-- 5 commands: `/start`, `/help`, `/new`, `/status`, `/restart`
-- 4 message types: text, photo, document, voice
+
+All bot logic for commands and messages.
+
+**Command handlers:**
+- `/start` — Welcome message
+- `/help` — Detailed help
+- `/new` — Clear session
+- `/status` — Server status
+- `/restart` — Restart server
+
+**Message handlers:**
+- Text messages — Forward to OpenCode
+- Photos — Download, send path to OpenCode
+- Documents — Download, send path to OpenCode
+- Voice — Transcribe locally, forward text
+
+**Features:**
 - Typing indicator during processing
 - Error handling with user-facing messages
+- Rate limiting between messages
+- JSON response detection (plain text fallback)
 
 ### `src/bot/session.py`
-In-memory session store (`dict[int, str]`). No persistence.
+
+In-memory session store.
+
+**Implementation:**
+- `dict[int, str]` mapping chat_id to session_id
+- No persistence
+- Fresh state on restart
 
 ### `src/bot/utils.py`
-- `send_reply()` — splits messages >4096 characters (first chunk quotes the original message)
+
+Utility functions for bot operations.
+
+**Functions:**
+- `send_reply()` — Split messages >4096 characters, quote original on first chunk
+- JSON detection — Send JSON responses as plain text
 
 ### `src/opencode/client.py`
-Async HTTP client for OpenCode API:
-- `create_session(title, project_dir)` → POST `/session`
-- `send_message(session_id, text)` → POST `/session/{id}/message`
-- `delete_session(session_id)` → DELETE `/session/{id}`
+
+Async HTTP client for OpenCode API.
+
+**Methods:**
+- `create_session(title, project_dir)` — POST `/session`
+- `send_message(session_id, text)` — POST `/session/{id}/message`
+- `delete_session(session_id)` — DELETE `/session/{id}`
+
+**Features:**
+- Async httpx client
 - Basic Auth support
+- Streaming response handling
+- Event parsing (text, tool-use, errors)
 
 ### `src/process/manager.py`
-Async subprocess manager:
-- `start()` — spawns `opencode serve`, waits 5s, health check
+
+Async subprocess manager for OpenCode server.
+
+**Methods:**
+- `start()` — Spawn `opencode serve`, wait 5s, health check
 - `stop()` — SIGTERM → 5s timeout → SIGKILL
-- `restart()` — stop + start
+- `restart()` — Stop + start
 - `is_healthy()` — GET `/global/health`
+- `uptime()` — Track server uptime
+
+**Health check:**
+- HTTP GET to `/global/health`
+- 5-second timeout
+- Retry logic on startup
 
 ### `src/voice/transcriber.py`
-- Lazy-init `faster_whisper.WhisperModel("small", cpu, int8)`
+
+Local voice transcription using faster-whisper.
+
+**Features:**
+- Lazy-init `WhisperModel("small", cpu=True, compute_type="int8")`
 - `HF_HOME` forced to `storage/models/`
 - `transcribe(file_path, language)` → str
+
+**Model:**
+- Size: ~240MB (small)
+- Quantization: int8
+- Execution: CPU only
+
+### `.opencode/opencode.json`
+
+OpenCode agent configuration.
+
+**Structure:**
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/deepseek-v4-flash",
+  "default_agent": "build",
+  "plugin": ["superpowers", "@asidorenko/openslimedit", "agents-opencode"],
+  "agent": {
+    "build": { "model": "opencode-go/deepseek-v4-flash" },
+    "plan": { "model": "opencode-go/glm-5.1" },
+    ...
+  },
+  "permission": {
+    "skill": { "*": "allow" }
+  }
+}
+```
+
+**Components:**
+- **Default agent:** `build`
+- **14 agents:** Each with dedicated model
+- **3 plugins:** superpowers, openslimedit, agents-opencode
+- **Skills:** Auto-allowed via wildcard permission
+
+### `.opencode/agents/`
+
+Agent instruction files.
+
+**Example: `file-parser.md`:**
+- Specialized agent for file analysis
+- Read-only permissions (no bash, no edit, no skills)
+- Direct invocation via `opencode run --agent file-parser`
+- Vision capabilities for images
+- Document parsing for text extraction
+- Structured response format
+
+## Data Flow
+
+### Text Message Flow
+
+```
+User → Telegram → Bot Handler → Session Store → OpenCodeClient → OpenCode Server → Agent → Response → Bot → Telegram → User
+```
+
+### Photo/Document Flow
+
+```
+User → Telegram → Bot Handler → Download to storage/temp/ → OpenCodeClient (with path) → OpenCode Server → file-parser Agent → Response → Bot → Telegram → User
+```
+
+### Voice Message Flow
+
+```
+User → Telegram → Bot Handler → Download OGG → VoiceTranscriber → Transcription → OpenCodeClient → OpenCode Server → Agent → Response → Bot → Telegram → User
+```
+
+### Server Lifecycle
+
+```
+CLI start → Bootstrap → ProcessManager.start() → opencode serve subprocess → Health check → Bot listener → (running) → Ctrl+C → ProcessManager.stop() → SIGTERM → 5s timeout → SIGKILL → Exit
+```
 
 ## Key Design Decisions
 
@@ -130,3 +311,90 @@ Async subprocess manager:
 | `safe_path()` on all writes | Defense against malicious filenames. |
 | Auto-cleanup temp | Prevent disk fill from large files. |
 | Single user (ALLOWED_CHAT_ID) | Bot is a personal mobile interface. |
+| Agent-per-task specialization | Better results with focused agents. |
+| Auto-allowed skills | Flexibility for domain-specific guidance. |
+| Plugin-based architecture | Extensible AI capabilities. |
+
+## Integration Points
+
+### Telegram Bot API
+
+- **Library:** `python-telegram-bot` v21+
+- **Mode:** Async (asyncio)
+- **Features:** Commands, messages, photos, documents, voice
+
+### OpenCode Server
+
+- **Protocol:** HTTP REST API
+- **Auth:** Basic Auth (optional)
+- **Endpoints:** `/session`, `/session/{id}/message`, `/global/health`
+
+### faster-whisper
+
+- **Library:** `faster-whisper`
+- **Model:** small (int8 quantized)
+- **Cache:** `storage/models/` via `HF_HOME`
+
+## Testing Architecture
+
+### Test Structure
+
+```
+tests/
+├── conftest.py          # Shared fixtures
+├── test_bot.py          # Bot handler tests
+├── test_client.py       # OpenCode client tests
+├── test_manager.py      # Process manager tests
+├── test_security.py     # Security function tests
+└── test_transcriber.py  # Voice transcriber tests
+```
+
+### Testing Tools
+
+- **pytest** — Test framework
+- **pytest-asyncio** — Async test support (auto mode)
+- **respx** — HTTP mocking for OpenCode client
+- **pytest-cov** — Coverage reporting
+
+### Fixtures
+
+- `config` — Test configuration
+- `mock_update` — Mocked Telegram update
+- `mock_context` — Mocked callback context
+
+## Deployment Considerations
+
+### Local Development
+
+- Run on localhost
+- Direct file system access
+- No network exposure
+
+### Production Deployment
+
+- Keep OpenCode server on localhost
+- Use Basic Auth for server
+- Restrict bot to single chat ID
+- Monitor server health via `/status`
+
+### Resource Requirements
+
+| Component | Memory | CPU |
+|-----------|--------|-----|
+| Bot process | ~100MB | Low |
+| OpenCode server | ~500MB | Medium |
+| Whisper model | ~240MB | High (during transcription) |
+
+## Monitoring
+
+### Health Checks
+
+- `/status` command — Server health and uptime
+- Process manager — Automatic health monitoring
+- Pre-flight checks — Startup validation
+
+### Logging
+
+- Bot logs — `storage/logs/`
+- OpenCode server logs — Server-managed
+- Temp file cleanup — Logged at startup
