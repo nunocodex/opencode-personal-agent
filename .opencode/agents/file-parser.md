@@ -1,6 +1,6 @@
 ---
 description: Analyzes file attachments (images, documents, video) using vision
-mode: subagent
+mode: primary
 temperature: 0.2
 permission:
   read: allow
