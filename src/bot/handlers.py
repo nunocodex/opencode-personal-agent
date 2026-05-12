@@ -14,6 +14,7 @@ from telegram.ext import ContextTypes
 from config import Config
 from opencode.client import OpenCodeClient
 from process.manager import ProcessManager
+from process.monitor import HealthMonitor
 
 from .session import SessionStore
 from .utils import send_reply, typing_scope
@@ -22,10 +23,11 @@ from .utils import send_reply, typing_scope
 class BotHandlers:
     """Handles commands and text messages."""
 
-    def __init__(self, config: Config, store: SessionStore, process_manager: ProcessManager) -> None:
+    def __init__(self, config: Config, store: SessionStore, process_manager: ProcessManager, monitor: HealthMonitor | None = None) -> None:
         self.config = config
         self.store = store
         self.pm = process_manager
+        self.monitor = monitor
         self.client = OpenCodeClient(config)
         self._last_request_time: float = 0.0
         self._min_interval: float = getattr(config, "rate_limit_seconds", 2.0)
@@ -140,6 +142,17 @@ class BotHandlers:
             f"Server: {'running' if healthy else 'unhealthy'}",
             f"Uptime: {uptime_str}",
         ]
+        if self.monitor is not None:
+            tg = self.monitor.telegram_ok
+            if tg is True:
+                lines.append("Telegram: reachable")
+            elif tg is False:
+                lines.append(f"Telegram: unreachable ({self.monitor.telegram_failures}/{self.monitor.max_failures})")
+            else:
+                lines.append("Telegram: not checked yet")
+            oc = self.monitor.opencode_ok
+            if oc is not None:
+                lines.append(f"Server health: {'ok' if oc else 'degraded'}")
         await update.effective_message.reply_text("\n".join(lines), parse_mode="Markdown")
 
     async def cmd_restart(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

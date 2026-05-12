@@ -18,6 +18,7 @@ if _SRC not in sys.path:
 
 from config import Config
 from process.manager import ProcessManager
+from process.monitor import HealthMonitor
 from voice.transcriber import VoiceTranscriber
 
 from bot.handlers import BotHandlers
@@ -25,10 +26,10 @@ from bot.media_handler import MediaHandler
 from bot.session import SessionStore
 
 
-def build_app(config: Config, process_manager: ProcessManager) -> tuple[Application, BotHandlers, MediaHandler]:
+def build_app(config: Config, process_manager: ProcessManager, monitor: HealthMonitor | None = None) -> tuple[Application, BotHandlers, MediaHandler]:
     store = SessionStore()
     transcriber = VoiceTranscriber()
-    handlers = BotHandlers(config, store, process_manager)
+    handlers = BotHandlers(config, store, process_manager, monitor)
     media = MediaHandler(config, handlers.client, store, transcriber)
 
     app = (
