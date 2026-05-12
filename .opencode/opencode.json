@@ -66,7 +66,7 @@
     "docs": {
       "description": "Writes and maintains project documentation, docstrings, README, and API docs.",
       "mode": "primary",
-      "model": "opencode-go/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.2,
       "color": "#607D8B",
       "permission": {
@@ -85,6 +85,30 @@
         "bash": "deny",
         "skill": {
           "*": "deny"
+        }
+      }
+    },
+    "explore": {
+      "description": "Fast agent specialized for exploring codebases. Quickly finds files by patterns, searches code for keywords, and answers questions about codebase structure.",
+      "model": "opencode-go/deepseek-v4-flash",
+      "color": "#00BCD4",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "skill": {
+          "*": "deny"
+        }
+      }
+    },
+    "general": {
+      "description": "General-purpose agent for researching complex questions and executing multi-step tasks.",
+      "model": "opencode-go/deepseek-v4-flash",
+      "color": "#795548",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "skill": {
+          "*": "allow"
         }
       }
     }

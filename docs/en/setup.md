@@ -71,8 +71,8 @@ To get your Telegram chat ID:
 The bot uses OpenCode configuration from `.opencode/opencode.json`. This file defines:
 
 - **Default agent:** `build`
-- **Available agents:** 14 specialized agents (build, plan, review, docs, etc.)
-- **Plugins:** superpowers, openslimedit, agents-opencode
+- **Available agents:** 8 specialized agents (build, plan, review, docs, etc.)
+- **Plugins:** superpowers, openslimedit
 - **Skills:** Auto-allowed skills for domain-specific guidance
 - **Models:** Model assignments per agent
 
@@ -80,13 +80,12 @@ No changes are needed for basic usage. Advanced users can modify agent configura
 
 #### Plugin Configuration
 
-Three plugins are configured:
+Two plugins are configured:
 
 | Plugin | Purpose |
 |--------|---------|
 | `superpowers` | Enhanced AI capabilities and tools |
 | `@asidorenko/openslimedit` | Efficient file editing operations |
-| `agents-opencode` | Multi-agent orchestration system |
 
 Plugins are automatically loaded by OpenCode. No additional setup required.
 
