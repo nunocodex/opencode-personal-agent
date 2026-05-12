@@ -4,7 +4,7 @@ Riferimento completo per tutti gli agenti, plugin e skill OpenCode disponibili n
 
 ## Agenti
 
-Il bot utilizza il sistema multi-agente di OpenCode con 8 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato.
+Il bot utilizza il sistema multi-agente di OpenCode con 10 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato.
 
 ### Configurazione Agenti
 
@@ -15,7 +15,9 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 | Agente | Modello | Scopo | Quando Usare |
 |--------|---------|-------|--------------|
 | `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice | Creare nuovo codice, implementare feature (default) |
-| `plan` | glm-5.1 | Pianificazione architettura e implementazione | Pianificazione alto livello, system design |
+| `plan` | glm-5.1 | Pianificazione architettura e implementazione | Pianificazione standard, system design |
+| `plan-opus` | glm-5.1 | Pianificazione approfondita per sistemi complessi | Architetture grandi, specifiche dettagliate |
+| `plan-haiku` | deepseek-v4-flash | Schizzi implementazione rapidi | Pianificazione leggera, bozze veloci |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase | Comprendere codice esistente, trovare pattern |
 | `debug` | glm-5.1 | Debug sistematico e analisi cause radice | Investigare bug, test falliti, comportamento inaspettato |
 | `review` | glm-5.1 | Revisione codice e analisi sicurezza | Revisionare codice, trovare vulnerabilità |
@@ -46,6 +48,28 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 - "Plan the migration strategy from monolith to microservices"
 
 **Risposta attesa:** Diagrammi architettura, breakdown componenti, raccomandazioni tecnologiche.
+
+#### plan-opus
+
+**Scopo:** Pianificazione approfondita per sistemi complessi. Usa lo stesso modello di plan ma con temperatura più bassa per analisi più metodica ed esaustiva.
+
+**Prompt di esempio:**
+- "Design a comprehensive migration strategy from monolith to microservices"
+- "Plan the full architecture for a multi-tenant SaaS platform with detailed component boundaries"
+- "Create an exhaustive implementation plan for adding end-to-end encryption"
+
+**Risposta attesa:** Architettura dettagliata con edge case, trade-off e percorsi di migrazione.
+
+#### plan-haiku
+
+**Scopo:** Schizzi implementazione rapidi e pianificazione leggera. Veloce, conciso, sufficiente per feature semplici.
+
+**Prompt di esempio:**
+- "Sketch a plan for adding a health check endpoint to the API"
+- "Quick implementation plan for a CLI flag parser"
+- "Lightweight plan for adding input validation to this form"
+
+**Risposta attesa:** Passi concisi, focalizzati sul percorso implementativo essenziale.
 
 #### explore
 

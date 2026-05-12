@@ -12,7 +12,7 @@
 - **Async process lifecycle** — start/stop/restart `opencode serve`
 - **Security-first** — path traversal protection, sensitive file blocklist, single-user auth
 - **68 tests, 84% coverage**
-- **8 specialized AI agents** for different tasks (build, plan, review, docs, explore, etc.)
+- **10 specialized AI agents** for different tasks (build, plan, review, docs, explore, etc.)
 - **20+ skills** for language-specific guidance (Python, React, Flutter, Go, Rust, etc.)
 
 ## Quick Start
@@ -67,7 +67,9 @@ The bot uses OpenCode with two plugins installed:
 | Agent | Model | Use Case |
 |-------|-------|----------|
 | `build` | deepseek-v4-flash | Build new features and code (default) |
-| `plan` | glm-5.1 | Architecture and implementation planning |
+| `plan` | glm-5.1 | Standard architecture and implementation planning |
+| `plan-opus` | glm-5.1 | Deep planning for complex systems |
+| `plan-haiku` | deepseek-v4-flash | Quick implementation sketches |
 | `explore` | deepseek-v4-flash | Explore and understand codebases |
 | `debug` | glm-5.1 | Systematic debugging and root cause analysis |
 | `review` | glm-5.1 | Code review and security analysis |

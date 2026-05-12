@@ -10,7 +10,7 @@ Questo bot Telegram inoltra i tuoi messaggi a un server OpenCode locale e restit
 
 - **5 comandi bot** per gestione sessione e server
 - **4 tipi di messaggio**: testo, foto, documento, voce
-- **8 agenti AI specializzati** per diversi compiti
+- **10 agenti AI specializzati** per diversi compiti
 - **20+ skill** per guida specifica per dominio e linguaggio
 - **2 plugin OpenCode** per capacità avanzate
 - **Trascrizione vocale 100% locale** via faster-whisper
@@ -51,12 +51,14 @@ python -m src.cli start
 
 ## Agenti Disponibili
 
-Il bot utilizza il sistema multi-agente di OpenCode con 8 agenti specializzati:
+Il bot utilizza il sistema multi-agente di OpenCode con 10 agenti specializzati:
 
 | Agente | Modello | Scopo |
 |--------|---------|-------|
 | `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice (default) |
-| `plan` | glm-5.1 | Pianificazione architettura e implementazione |
+| `plan` | glm-5.1 | Pianificazione architettura e implementazione standard |
+| `plan-opus` | glm-5.1 | Pianificazione approfondita per sistemi complessi |
+| `plan-haiku` | deepseek-v4-flash | Schizzi implementazione rapidi |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase |
 | `debug` | glm-5.1 | Debug sistematico e analisi cause |
 | `review` | glm-5.1 | Revisione codice e analisi sicurezza |

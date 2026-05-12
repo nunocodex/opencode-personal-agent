@@ -21,6 +21,36 @@
         }
       }
     },
+    "plan-opus": {
+      "description": "Deep architecture and implementation planning for complex systems. Thorough, methodical, exhaustive. Read-only.",
+      "mode": "primary",
+      "model": "opencode-go/glm-5.1",
+      "temperature": 0.1,
+      "color": "#1A237E",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "deny",
+          "writing-plans": "allow"
+        }
+      }
+    },
+    "plan-haiku": {
+      "description": "Quick implementation sketches and lightweight planning. Fast, concise, sufficient. Read-only.",
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "color": "#90CAF9",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "deny",
+          "writing-plans": "allow"
+        }
+      }
+    },
     "build": {
       "description": "Implements code, runs tests, follows plans with TDD and verification.",
       "mode": "primary",

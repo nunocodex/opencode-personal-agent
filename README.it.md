@@ -12,7 +12,7 @@
 - **Ciclo di vita asincrono** — avvia/ferma/riavvia `opencode serve`
 - **Sicurezza prima di tutto** — protezione path traversal, blocklist file sensibili, autenticazione singolo utente
 - **68 test, 84% copertura**
-- **8 agenti AI specializzati** per diversi compiti (build, plan, review, docs, explore, ecc.)
+- **10 agenti AI specializzati** per diversi compiti (build, plan, review, docs, explore, ecc.)
 - **20+ skill** per guida specifica per linguaggio (Python, React, Flutter, Go, Rust, ecc.)
 
 ## Avvio Rapido
@@ -67,7 +67,9 @@ Il bot utilizza OpenCode con due plugin installati:
 | Agente | Modello | Caso d'Uso |
 |--------|---------|------------|
 | `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice (default) |
-| `plan` | glm-5.1 | Pianificazione architettura e implementazione |
+| `plan` | glm-5.1 | Pianificazione architettura standard |
+| `plan-opus` | glm-5.1 | Pianificazione approfondita per sistemi complessi |
+| `plan-haiku` | deepseek-v4-flash | Schizzi implementazione rapidi |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase |
 | `debug` | glm-5.1 | Debug sistematico e analisi cause |
 | `review` | glm-5.1 | Revisione codice e analisi sicurezza |

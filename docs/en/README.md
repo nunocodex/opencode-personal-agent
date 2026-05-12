@@ -10,7 +10,7 @@ This Telegram bot forwards your messages to a local OpenCode server and returns 
 
 - **5 bot commands** for session and server management
 - **4 message types**: text, photo, document, voice
-- **8 specialized AI agents** for different tasks
+- **10 specialized AI agents** for different tasks
 - **20+ skills** for language-specific and domain-specific guidance
 - **2 OpenCode plugins** for enhanced capabilities
 - **100% local voice transcription** via faster-whisper
@@ -51,12 +51,14 @@ python -m src.cli start
 
 ## Available Agents
 
-The bot uses OpenCode's multi-agent system with 8 specialized agents:
+The bot uses OpenCode's multi-agent system with 10 specialized agents:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `build` | deepseek-v4-flash | Build new features and code (default) |
-| `plan` | glm-5.1 | Architecture and implementation planning |
+| `plan` | glm-5.1 | Standard architecture and implementation planning |
+| `plan-opus` | glm-5.1 | Deep, thorough planning for complex systems |
+| `plan-haiku` | deepseek-v4-flash | Quick implementation sketches |
 | `explore` | deepseek-v4-flash | Explore and understand codebases |
 | `debug` | glm-5.1 | Systematic debugging and root cause analysis |
 | `review` | glm-5.1 | Code review and security analysis |

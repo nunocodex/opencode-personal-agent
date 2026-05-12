@@ -58,7 +58,7 @@ Documentazione architettura di sistema per il bot Telegram OpenCode Personal Age
 │  │  ┌────────────────────────────────────────────┐  │   │
 │  │  │  .opencode/opencode.json                   │  │   │
 │  │  │  - default_agent: build                    │  │   │
-│  │  │  - 8 agenti (build, plan, review, ecc.)   │  │   │
+│  │  │  - 10 agenti (build, plan, review, ecc.)  │  │   │
 │  │  │  - assegnazioni modello per agente         │  │   │
 │  │  └────────────────────────────────────────────┘  │   │
 │  │  ┌────────────────────────────────────────────┐  │   │
@@ -285,7 +285,7 @@ Configurazione agenti OpenCode.
 
 **Componenti:**
 - **Agente predefinito:** `build`
-- **8 agenti:** Ognuno con modello dedicato
+- **10 agenti:** Ognuno con modello dedicato
 - **2 plugin:** superpowers, openslimedit
 - **Skill:** Auto-allow tramite permission wildcard
 

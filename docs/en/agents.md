@@ -4,7 +4,7 @@ Complete reference for all OpenCode agents, plugins, and skills available in the
 
 ## Agents
 
-The bot uses OpenCode's multi-agent system with 8 specialized agents. Each agent is optimized for specific tasks and uses a dedicated model.
+The bot uses OpenCode's multi-agent system with 10 specialized agents. Each agent is optimized for specific tasks and uses a dedicated model.
 
 ### Agent Configuration
 
@@ -15,7 +15,9 @@ Agents are configured in `.opencode/opencode.json`. The default agent is `build`
 | Agent | Model | Purpose | When to Use |
 |-------|-------|---------|-------------|
 | `build` | deepseek-v4-flash | Build new features and code | Creating new code, implementing features (default) |
-| `plan` | glm-5.1 | Architecture and implementation planning | High-level planning, system design |
+| `plan` | glm-5.1 | Architecture and implementation planning | Standard planning, system design |
+| `plan-opus` | glm-5.1 | Deep, thorough planning for complex systems | Large architecture, detailed specifications |
+| `plan-haiku` | deepseek-v4-flash | Quick implementation sketches | Lightweight planning, fast drafts |
 | `explore` | deepseek-v4-flash | Explore and understand codebases | Understanding existing code, finding patterns |
 | `debug` | glm-5.1 | Systematic debugging and root cause analysis | Investigating bugs, test failures, unexpected behavior |
 | `review` | glm-5.1 | Code review and security analysis | Reviewing code, finding vulnerabilities |
@@ -46,6 +48,28 @@ Agents are configured in `.opencode/opencode.json`. The default agent is `build`
 - "Plan the migration strategy from monolith to microservices"
 
 **Expected response:** Architecture diagrams, component breakdown, technology recommendations.
+
+#### plan-opus
+
+**Purpose:** Deep, thorough planning for complex systems. Uses the same model as plan but with lower temperature for more methodical, exhaustive analysis.
+
+**Example prompts:**
+- "Design a comprehensive migration strategy from monolith to microservices"
+- "Plan the full architecture for a multi-tenant SaaS platform with detailed component boundaries"
+- "Create an exhaustive implementation plan for adding end-to-end encryption"
+
+**Expected response:** Thorough, detailed architecture with edge cases, trade-offs, and migration paths.
+
+#### plan-haiku
+
+**Purpose:** Quick implementation sketches and lightweight planning. Fast, concise, sufficient for straightforward features.
+
+**Example prompts:**
+- "Sketch a plan for adding a health check endpoint to the API"
+- "Quick implementation plan for a CLI flag parser"
+- "Lightweight plan for adding input validation to this form"
+
+**Expected response:** Concise steps, focused on the essential implementation path.
 
 #### explore
 
