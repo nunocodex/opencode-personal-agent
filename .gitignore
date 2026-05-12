@@ -38,6 +38,7 @@ storage/uploads/*
 !storage/uploads/.gitkeep
 
 # Coverage
+.coverage
 .coverage/
 coverage/
 coverage.json
