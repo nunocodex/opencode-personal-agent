@@ -5,6 +5,7 @@ import httpx
 import pytest
 import respx
 from respx import MockRouter
+from unittest.mock import AsyncMock, patch
 
 from config import Config
 from opencode.client import OpenCodeClient
@@ -73,3 +74,43 @@ class TestDeleteSession:
         )
         client = OpenCodeClient(config)
         await client.delete_session("sess-123")
+
+
+class TestSendMessageCLI:
+    @staticmethod
+    def _mock_exec() -> AsyncMock:
+        mock_proc = AsyncMock()
+        mock_proc.communicate = AsyncMock(return_value=(b'{"type":"text","text":"ok"}', b""))
+        mock_proc.returncode = 0
+        return mock_proc
+
+    async def test_cli_includes_agent_flag(self, config: Config) -> None:
+        client = OpenCodeClient(config)
+        with patch("opencode.client.asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = self._mock_exec()
+            with patch("opencode.client.shutil.which", return_value="/usr/bin/opencode"):
+                await client.send_message_cli("analyze this image")
+        cmd_args = mock_exec.call_args[0]
+        assert "--agent" in cmd_args
+        agent_idx = cmd_args.index("--agent")
+        assert cmd_args[agent_idx + 1] == "file-parser"
+
+    async def test_cli_includes_file_flag(self, config: Config) -> None:
+        client = OpenCodeClient(config)
+        with patch("opencode.client.asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = self._mock_exec()
+            with patch("opencode.client.shutil.which", return_value="/usr/bin/opencode"):
+                await client.send_message_cli("analyze this", file_paths=["/path/to/img.jpg"])
+        cmd_args = mock_exec.call_args[0]
+        assert "--file" in cmd_args
+        file_idx = cmd_args.index("--file")
+        assert cmd_args[file_idx + 1] == "/path/to/img.jpg"
+
+    async def test_cli_omits_file_flag_when_not_provided(self, config: Config) -> None:
+        client = OpenCodeClient(config)
+        with patch("opencode.client.asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = self._mock_exec()
+            with patch("opencode.client.shutil.which", return_value="/usr/bin/opencode"):
+                await client.send_message_cli("just text")
+        cmd_args = mock_exec.call_args[0]
+        assert "--file" not in cmd_args
