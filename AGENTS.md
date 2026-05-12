@@ -36,6 +36,7 @@ CLI → Bootstrap (checks) → main.py → PTB Bot App
                                       ├── session.py (in-memory dict)
                                       ├── opencode/client.py (httpx → OpenCode API)
                                       ├── process/manager.py (opencode serve subprocess)
+                                      ├── process/monitor.py (health checks + auto-restart)
                                       └── voice/transcriber.py (faster-whisper, local)
 ```
 
@@ -43,6 +44,7 @@ CLI → Bootstrap (checks) → main.py → PTB Bot App
 - **`src/bot/media_handler.py`** — handles photo, document, and voice messages. Downloads files to `storage/uploads/`, delegates file analysis to the `file-parser` agent via `opencode run --agent file-parser`, and transcribes voice with faster-whisper.
 - **`src/bot/utils.py`** — shared utilities: `send_reply()` (splits long messages, detects JSON), `check_auth()`, `typing_scope()` (typing indicator).
 - **`src/process/manager.py`** — manages `opencode serve` lifecycle: start (5s wait + health check), stop (SIGTERM → 5s → SIGKILL), restart.
+- **`src/process/monitor.py`** — background health monitor: checks Telegram API and OpenCode server every 60s. Auto-restarts `opencode serve` if unhealthy. Emits an event when Telegram is unreachable for too long, triggering polling restart in main loop.
 - **`src/opencode/client.py`** — async HTTP client: create session, send message, delete session via API. Also provides `send_message_cli()` for media files, spawning `opencode run --agent file-parser` as a disposable session. Uses Basic Auth.
 - **`src/voice/transcriber.py`** — lazy-init WhisperModel("small", CPU, int8). `HF_HOME` forced to `storage/models/`.
 - **`src/security.py`** — `safe_path()` blocks traversal + sensitive file patterns.
