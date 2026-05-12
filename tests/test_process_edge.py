@@ -58,6 +58,40 @@ class TestProcessManagerEdgeCases:
             if not had_sigkill:
                 delattr(pm_module.signal, "SIGKILL")
 
+    async def test_kill_port_processes_windows(self, pm: ProcessManager) -> None:
+        with patch("process.manager.ProcessManager._find_pids_on_port_windows", new_callable=AsyncMock) as mock_find:
+            mock_find.return_value = [123, 456]
+            with patch("os.kill") as mock_kill:
+                await pm._kill_port_processes(4096)
+            assert mock_kill.call_count == 2
+
+    async def test_find_pids_on_port_windows_parses_output(self, pm: ProcessManager) -> None:
+        fake_netstat = (
+            "  TCP    0.0.0.0:4096   0.0.0.0:0    LISTENING       12345\r\n"
+            "  TCP    0.0.0.0:0       0.0.0.0:0    LISTENING       0\r\n"
+            "  TCP    0.0.0.0:8080   0.0.0.0:0    LISTENING       67890\r\n"
+        )
+        with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
+            proc = MagicMock()
+            proc.communicate = AsyncMock(return_value=(fake_netstat.encode(), b""))
+            mock_proc.return_value = proc
+            pids = await pm._find_pids_on_port_windows(4096)
+        assert pids == [12345]
+
+    async def test_find_pids_excludes_pid_zero(self, pm: ProcessManager) -> None:
+        fake_netstat = "  TCP    0.0.0.0:4096   0.0.0.0:0    LISTENING       0\r\n"
+        with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
+            proc = MagicMock()
+            proc.communicate = AsyncMock(return_value=(fake_netstat.encode(), b""))
+            mock_proc.return_value = proc
+            pids = await pm._find_pids_on_port_windows(4096)
+        assert pids == []
+
+    async def test_find_pids_returns_empty_on_error(self, pm: ProcessManager) -> None:
+        with patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError):
+            pids = await pm._find_pids_on_port_windows(4096)
+        assert pids == []
+
     async def test_pipe_stdout(self, pm: ProcessManager) -> None:
         pm._process = MagicMock()
         pm._process.stdout = MagicMock()

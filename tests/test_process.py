@@ -92,9 +92,10 @@ class TestProcessManager:
         dummy = DummyProcess(returncode=None)
         with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=dummy):
             with patch.object(pm, "is_healthy", new_callable=AsyncMock, return_value=True):
-                await pm.restart()
-        dummy.returncode = 0
-        await pm.stop()
+                with patch.object(pm, "_find_pids_on_port_windows", new_callable=AsyncMock, return_value=[]):
+                    await pm.restart()
+                    dummy.returncode = 0
+                    await pm.stop()
 
     async def test_is_healthy_true(self, pm: ProcessManager) -> None:
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:

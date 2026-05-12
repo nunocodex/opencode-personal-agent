@@ -100,11 +100,15 @@ class ProcessManager:
         if self._process is None or self._process.returncode is not None:
             self._process = None
             self._start_time = None
+            # Still clean up port in case orphans survive
+            parsed = httpx.URL(self.config.opencode_server_url)
+            port = parsed.port or 4096
+            await self._kill_port_processes(port)
             return
 
         try:
             if sys.platform == "win32":
-                self._process.terminate()
+                self._process.kill()
             else:
                 self._process.send_signal(signal.SIGTERM)
         except ProcessLookupError:
@@ -113,12 +117,13 @@ class ProcessManager:
         try:
             await asyncio.wait_for(self._process.wait(), timeout=5.0)
         except asyncio.TimeoutError:
-            print("[ProcessManager] terminate/SIGTERM timeout, escalating to SIGKILL")
-            try:
-                self._process.kill()
-                await asyncio.wait_for(self._process.wait(), timeout=2.0)
-            except (ProcessLookupError, asyncio.TimeoutError):
-                pass
+            if sys.platform != "win32":
+                print("[ProcessManager] SIGTERM timeout, escalating to SIGKILL")
+                try:
+                    self._process.kill()
+                    await asyncio.wait_for(self._process.wait(), timeout=2.0)
+                except (ProcessLookupError, asyncio.TimeoutError):
+                    pass
 
         # Close subprocess streams to release pipe transports before
         # the event loop shuts down, preventing "I/O on closed pipe" warnings
@@ -145,6 +150,10 @@ class ProcessManager:
                 with contextlib.suppress(asyncio.CancelledError):
                     await t
         self._pipe_tasks = []
+        # Kill any remaining processes holding the port (orphaned children)
+        parsed = httpx.URL(self.config.opencode_server_url)
+        port = parsed.port or 4096
+        await self._kill_port_processes(port)
         print("[ProcessManager] stopped.")
 
     async def restart(self) -> None:
@@ -186,11 +195,13 @@ class ProcessManager:
 
     async def _kill_port_processes(self, port: int) -> None:
         if sys.platform == "win32":
-            # On Windows, the previous bot instance is already killed by
-            # terminate() in stop(). If a stale process remains, the health
-            # check below will succeed against the running instance, so a
-            # new opencode serve is not strictly needed.
-            pass
+            pids = await self._find_pids_on_port_windows(port)
+            for pid in pids:
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                    print(f"[ProcessManager] killed PID {pid} on port {port}")
+                except (ProcessLookupError, PermissionError):
+                    pass
         else:
             try:
                 proc = await asyncio.create_subprocess_exec(
@@ -206,6 +217,29 @@ class ProcessManager:
                         pass
             except FileNotFoundError:
                 pass
+
+    @staticmethod
+    async def _find_pids_on_port_windows(port: int) -> list[int]:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "netstat.exe", "-ano",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            stdout, _ = await proc.communicate()
+            pids: list[int] = []
+            for line in stdout.decode(errors="replace").splitlines():
+                parts = line.strip().split()
+                if len(parts) >= 5 and f":{port}" in parts[1]:
+                    try:
+                        pid = int(parts[4])
+                        if pid != 0 and pid not in pids:
+                            pids.append(pid)
+                    except (ValueError, IndexError):
+                        pass
+            return pids
+        except (FileNotFoundError, OSError):
+            return []
 
     async def _pipe_stdout(self) -> None:
         if self._process is None or self._process.stdout is None:
