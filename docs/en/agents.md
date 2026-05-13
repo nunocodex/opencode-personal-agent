@@ -4,25 +4,25 @@ Complete reference for all OpenCode agents, plugins, and skills available in the
 
 ## Agents
 
-The bot uses OpenCode's multi-agent system with 10 specialized agents. Each agent is optimized for specific tasks and uses a dedicated model.
+The bot uses OpenCode's multi-agent system with 10 specialized agents. Each agent is optimized for specific tasks and uses a dedicated model. Agent definitions live as standalone `.md` files in `.agents/agents/` and are symlinked into `.opencode/agents/` for OpenCode discovery.
 
 ### Agent Configuration
 
-Agents are configured in `.opencode/opencode.json`. The default agent is `build`.
+Agent definitions are in `.agents/agents/*.md` (cross-tool compatible format). The default agent is `build`.
 
 ### Agent Reference Table
 
 | Agent | Model | Purpose | When to Use |
 |-------|-------|---------|-------------|
 | `build` | deepseek-v4-flash | Build new features and code | Creating new code, implementing features (default) |
-| `plan` | glm-5.1 | Architecture and implementation planning | Standard planning, system design |
-| `plan-opus` | glm-5.1 | Deep, thorough planning for complex systems | Large architecture, detailed specifications |
-| `plan-haiku` | deepseek-v4-flash | Quick implementation sketches | Lightweight planning, fast drafts |
+| `plan` | deepseek-v4-flash | Architecture and implementation planning | Standard planning, system design |
+| `ultraplan` | deepseek-v4-pro | Deep, multi-phase planning via the ultraplan skill | Complex systems, large architecture |
 | `explore` | deepseek-v4-flash | Explore and understand codebases | Understanding existing code, finding patterns |
-| `debug` | glm-5.1 | Systematic debugging and root cause analysis | Investigating bugs, test failures, unexpected behavior |
-| `review` | glm-5.1 | Code review and security analysis | Reviewing code, finding vulnerabilities |
-| `docs` | deepseek-v4-flash | Generate documentation | Writing API docs, README files |
-| `file-parser` | kimi-k2.6 | Analyze images, documents, video | File analysis, OCR, content extraction |
+| `debug` | deepseek-v4-pro | Systematic debugging and root cause analysis | Investigating bugs, test failures, unexpected behavior |
+| `review` | deepseek-v4-pro | Code review and security analysis | Reviewing code, finding vulnerabilities |
+| `docs` | deepseek-v4-pro | Generate documentation | Writing API docs, README files |
+| `file-parser` | qwen3.6-plus | Analyze images, documents, video (multimodal) | File analysis, OCR, content extraction |
+| `scout` | deepseek-v4-flash | External docs and dependency research | Investigating library source, cross-referencing upstream code |
 | `general` | deepseek-v4-flash | General-purpose research and multi-step tasks | Complex questions, open-ended exploration |
 
 ### Agent Use Case Examples
@@ -49,27 +49,14 @@ Agents are configured in `.opencode/opencode.json`. The default agent is `build`
 
 **Expected response:** Architecture diagrams, component breakdown, technology recommendations.
 
-#### plan-opus
-
-**Purpose:** Deep, thorough planning for complex systems. Uses the same model as plan but with lower temperature for more methodical, exhaustive analysis.
+#### ultraplan
 
 **Example prompts:**
 - "Design a comprehensive migration strategy from monolith to microservices"
 - "Plan the full architecture for a multi-tenant SaaS platform with detailed component boundaries"
 - "Create an exhaustive implementation plan for adding end-to-end encryption"
 
-**Expected response:** Thorough, detailed architecture with edge cases, trade-offs, and migration paths.
-
-#### plan-haiku
-
-**Purpose:** Quick implementation sketches and lightweight planning. Fast, concise, sufficient for straightforward features.
-
-**Example prompts:**
-- "Sketch a plan for adding a health check endpoint to the API"
-- "Quick implementation plan for a CLI flag parser"
-- "Lightweight plan for adding input validation to this form"
-
-**Expected response:** Concise steps, focused on the essential implementation path.
+**Expected response:** Complete `.ultraplan/` directory with PRD, tech plan, traceability matrix, and summary.
 
 #### explore
 
@@ -104,6 +91,17 @@ Agents are configured in `.opencode/opencode.json`. The default agent is `build`
 
 **Expected response:** Security findings, bug reports, improvement suggestions.
 
+#### scout
+
+**Purpose:** Read-only agent for external docs and dependency research.
+
+**Example prompts:**
+- "Research the API of a third-party library we depend on"
+- "Clone repo X and inspect how they handle authentication"
+- "Cross-reference our implementation with an upstream library"
+
+**Expected response:** External code analysis, dependency insights, documentation findings.
+
 #### docs
 
 **Purpose:** Generate documentation.
@@ -117,7 +115,7 @@ Agents are configured in `.opencode/opencode.json`. The default agent is `build`
 
 #### file-parser
 
-**Purpose:** Analyze file attachments (images, documents, video).
+**Purpose:** Analyze file attachments (images, documents, video) using a multimodal model.
 
 **Capabilities:**
 - **Images & Photos:** Analyze visual content, extract text (OCR), describe scenes

@@ -56,10 +56,10 @@ System architecture documentation for the OpenCode Personal Agent Telegram bot.
 │  ┌──────────────────────────────────────────────────┐   │
 │  │              Agent Configuration                  │   │
 │  │  ┌────────────────────────────────────────────┐  │   │
-│  │  │  .opencode/opencode.json                   │  │   │
-│  │  │  - default_agent: build                    │  │   │
-│  │  │  - 10 agents (build, plan, review, etc.)   │  │   │
-│  │  │  - model assignments per agent             │  │   │
+ │  │  │  .opencode/opencode.json                   │  │   │
+ │  │  │  - default_agent: build                    │  │   │
+ │  │  │  - agents discovered from .agents/agents/   │  │   │
+ │  │  │  - 10 agents (build, plan, review, etc.)   │  │   │
 │  │  └────────────────────────────────────────────┘  │   │
 │  │  ┌────────────────────────────────────────────┐  │   │
 │  │  │  Plugins                                   │  │   │
@@ -256,7 +256,7 @@ Local voice transcription using faster-whisper.
 
 ### `.opencode/opencode.json`
 
-OpenCode agent configuration.
+OpenCode agent configuration (slim — no inline agent definitions).
 
 **Structure:**
 ```json
@@ -265,11 +265,6 @@ OpenCode agent configuration.
   "model": "opencode-go/deepseek-v4-flash",
   "default_agent": "build",
   "plugin": ["superpowers", "@asidorenko/openslimedit"],
-  "agent": {
-    "build": { "model": "opencode-go/deepseek-v4-flash" },
-    "plan": { "model": "opencode-go/glm-5.1" },
-    ...
-  },
   "permission": {
     "skill": { "*": "allow" }
   }
@@ -278,15 +273,33 @@ OpenCode agent configuration.
 
 **Components:**
 - **Default agent:** `build`
-- **10 agents:** Each with dedicated model
+- **10 agents:** Defined in `.agents/agents/*.md` (discovered via junction)
 - **2 plugins:** superpowers, openslimedit
 - **Skills:** Auto-allowed via wildcard permission
 
+### `.agents/agents/`
+
+Canonical agent definition files (cross-tool compatible format: YAML frontmatter + optional prompt body).
+
+**Contents:**
+| File | Model | Role |
+|------|-------|------|
+| `build.md` | deepseek-v4-flash | Implementation (default) |
+| `plan.md` | deepseek-v4-flash | Standard planning |
+| `ultraplan.md` | deepseek-v4-pro | Deep multi-phase planning |
+| `debug.md` | deepseek-v4-pro | Root cause analysis |
+| `review.md` | deepseek-v4-pro | Code review |
+| `docs.md` | deepseek-v4-pro | Documentation writing |
+| `file-parser.md` | qwen3.6-plus | Multimodal file analysis |
+| `explore.md` | deepseek-v4-flash | Codebase exploration (subagent) |
+| `scout.md` | deepseek-v4-flash | External docs research (subagent) |
+| `general.md` | deepseek-v4-flash | General purpose (subagent) |
+
 ### `.opencode/agents/`
 
-Agent instruction files.
+Junction (symlink) pointing to `.agents/agents/`. OpenCode discovers agent definitions from this directory. Real files live in `.agents/agents/`.
 
-**Example: `file-parser.md`:**
+**Example `file-parser.md` (accessible via junction):**
 - Specialized agent for file analysis
 - Read-only permissions (no bash, no edit, no skills)
 - Direct invocation via `opencode run --agent file-parser`

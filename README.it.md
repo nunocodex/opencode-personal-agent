@@ -67,14 +67,14 @@ Il bot utilizza OpenCode con due plugin installati:
 | Agente | Modello | Caso d'Uso |
 |--------|---------|------------|
 | `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice (default) |
-| `plan` | glm-5.1 | Pianificazione architettura standard |
-| `plan-opus` | glm-5.1 | Pianificazione approfondita per sistemi complessi |
-| `plan-haiku` | deepseek-v4-flash | Schizzi implementazione rapidi |
+| `plan` | deepseek-v4-flash | Pianificazione architettura standard |
+| `ultraplan` | deepseek-v4-pro | Pianificazione multi-fase approfondita |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase |
-| `debug` | glm-5.1 | Debug sistematico e analisi cause |
-| `review` | glm-5.1 | Revisione codice e analisi sicurezza |
-| `docs` | deepseek-v4-flash | Generare documentazione |
-| `file-parser` | kimi-k2.6 | Analizzare immagini, documenti, video |
+| `debug` | deepseek-v4-pro | Debug sistematico e analisi cause |
+| `review` | deepseek-v4-pro | Revisione codice e analisi sicurezza |
+| `docs` | deepseek-v4-pro | Generare documentazione |
+| `file-parser` | qwen3.6-plus | Analizzare immagini, documenti, video (multimodale) |
+| `scout` | deepseek-v4-flash | Ricerca documentazione esterna e dipendenze |
 | `general` | deepseek-v4-flash | Ricerca generica e task multi-step |
 
 ## Esempi di Utilizzo

@@ -71,12 +71,12 @@ Per ottenere il tuo chat ID Telegram:
 Il bot utilizza la configurazione OpenCode da `.opencode/opencode.json`. Questo file definisce:
 
 - **Agente predefinito:** `build`
-- **Agenti disponibili:** 10 agenti specializzati (build, plan, review, docs, ecc.)
+- **Agenti disponibili:** 10 agenti specializzati (build, plan, ultraplan, review, docs, ecc.)
 - **Plugin:** superpowers, openslimedit
 - **Skill:** Skill auto-allow per guida specifica per dominio
 - **Modelli:** Assegnazioni modello per agente
 
-Nessuna modifica è necessaria per l'uso base. Utenti avanzati possono modificare le configurazioni agente in `.opencode/`.
+Nessuna modifica è necessaria per l'uso base. Utenti avanzati possono modificare le definizioni agente in `.agents/agents/` (posizione canonica) o `.opencode/agents/` (junction).
 
 #### Configurazione Plugin
 

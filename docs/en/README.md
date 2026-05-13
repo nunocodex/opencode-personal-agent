@@ -56,14 +56,14 @@ The bot uses OpenCode's multi-agent system with 10 specialized agents:
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `build` | deepseek-v4-flash | Build new features and code (default) |
-| `plan` | glm-5.1 | Standard architecture and implementation planning |
-| `plan-opus` | glm-5.1 | Deep, thorough planning for complex systems |
-| `plan-haiku` | deepseek-v4-flash | Quick implementation sketches |
+| `plan` | deepseek-v4-flash | Standard architecture and implementation planning |
+| `ultraplan` | deepseek-v4-pro | Deep, multi-phase planning via ultraplan skill |
 | `explore` | deepseek-v4-flash | Explore and understand codebases |
-| `debug` | glm-5.1 | Systematic debugging and root cause analysis |
-| `review` | glm-5.1 | Code review and security analysis |
-| `docs` | deepseek-v4-flash | Generate documentation |
-| `file-parser` | kimi-k2.6 | Analyze images, documents, video |
+| `debug` | deepseek-v4-pro | Systematic debugging and root cause analysis |
+| `review` | deepseek-v4-pro | Code review and security analysis |
+| `docs` | deepseek-v4-pro | Generate documentation |
+| `file-parser` | qwen3.6-plus | Analyze images, documents, video (multimodal) |
+| `scout` | deepseek-v4-flash | External docs and dependency research |
 | `general` | deepseek-v4-flash | General-purpose research and multi-step tasks |
 
 ## Plugins
@@ -207,7 +207,10 @@ opencode-personal-agent/
 ├── docs/
 │   ├── en/                  # English documentation
 │   └── it/                  # Italian documentation
-├── .opencode/               # OpenCode agent configuration
+├── .agents/                 # Agent definitions (cross-tool compatible)
+│   ├── agents/              # Per-agent .md files (YAML frontmatter + prompt)
+│   └── skills/              # Project-specific skills
+├── .opencode/               # OpenCode project config
 └── run.ps1 / run.sh         # Launchers
 ```
 

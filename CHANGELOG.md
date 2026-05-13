@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Migrated agent definitions from inline JSON in `.opencode/opencode.json` to standalone `.md` files in `.agents/agents/` (cross-tool compatible format)
+- Replaced `plan-opus` and `plan-haiku` with `ultraplan` agent (uses ultraplan skill, 6-phase pipeline)
+- Added `scout` subagent (built-in OpenCode, now mapped)
+- `file-parser` model: kimi-k2.6 → qwen3.6-plus (multimodal)
+- `debug`, `review`, `docs` model: glm-5.1 → deepseek-v4-pro (power text-only)
+- `plan` model: glm-5.1 → deepseek-v4-flash (flash tier)
+- Slimmed `opencode.json` to model/default_agent/plugin/skill permissions only
+- Created junction `.opencode/agents/` → `.agents/agents/` for OpenCode discovery
+
 ## [0.2.0] - 2025-04-02
 
 ### Added

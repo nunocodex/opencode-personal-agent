@@ -72,4 +72,4 @@ CLI → Bootstrap (checks) → main.py → PTB Bot App
 
 ## OpenCode Config
 
-`.opencode/opencode.json` — default agent is `build`, model `opencode-go/deepseek-v4-flash`. 10 agents are defined (plan, plan-opus, plan-haiku, build, debug, review, docs, file-parser, explore, general). Two plugins: superpowers, @asidorenko/openslimedit. Skills are auto-allowed.
+`opencode.json` (`.opencode/opencode.json` + `.agents/agents/*.md`) — default agent is `build`, model `opencode-go/deepseek-v4-flash`. 10 agents are defined (plan, ultraplan, build, debug, review, docs, file-parser, explore, scout, general). Two plugins: superpowers, @asidorenko/openslimedit. Skills are auto-allowed.

@@ -4,25 +4,25 @@ Riferimento completo per tutti gli agenti, plugin e skill OpenCode disponibili n
 
 ## Agenti
 
-Il bot utilizza il sistema multi-agente di OpenCode con 10 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato.
+Il bot utilizza il sistema multi-agente di OpenCode con 10 agenti specializzati. Ogni agente è ottimizzato per compiti specifici e utilizza un modello dedicato. Le definizioni degli agenti vivono come file `.md` indipendenti in `.agents/agents/` e sono collegate simbolicamente in `.opencode/agents/` per la scoperta da parte di OpenCode.
 
 ### Configurazione Agenti
 
-Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito è `build`.
+Le definizioni degli agenti sono in `.agents/agents/*.md` (formato cross-tool compatibile). L'agente predefinito è `build`.
 
 ### Tabella di Riferimento Agenti
 
 | Agente | Modello | Scopo | Quando Usare |
 |--------|---------|-------|--------------|
 | `build` | deepseek-v4-flash | Costruire nuove funzionalità e codice | Creare nuovo codice, implementare feature (default) |
-| `plan` | glm-5.1 | Pianificazione architettura e implementazione | Pianificazione standard, system design |
-| `plan-opus` | glm-5.1 | Pianificazione approfondita per sistemi complessi | Architetture grandi, specifiche dettagliate |
-| `plan-haiku` | deepseek-v4-flash | Schizzi implementazione rapidi | Pianificazione leggera, bozze veloci |
+| `plan` | deepseek-v4-flash | Pianificazione architettura e implementazione | Pianificazione standard, system design |
+| `ultraplan` | deepseek-v4-pro | Pianificazione multi-fase approfondita tramite skill ultraplan | Sistemi complessi, architetture grandi |
 | `explore` | deepseek-v4-flash | Esplorare e comprendere codebase | Comprendere codice esistente, trovare pattern |
-| `debug` | glm-5.1 | Debug sistematico e analisi cause radice | Investigare bug, test falliti, comportamento inaspettato |
-| `review` | glm-5.1 | Revisione codice e analisi sicurezza | Revisionare codice, trovare vulnerabilità |
-| `docs` | deepseek-v4-flash | Generare documentazione | Scrivere API docs, file README |
-| `file-parser` | kimi-k2.6 | Analizzare immagini, documenti, video | Analisi file, OCR, estrazione contenuti |
+| `debug` | deepseek-v4-pro | Debug sistematico e analisi cause radice | Investigare bug, test falliti, comportamento inaspettato |
+| `review` | deepseek-v4-pro | Revisione codice e analisi sicurezza | Revisionare codice, trovare vulnerabilità |
+| `docs` | deepseek-v4-pro | Generare documentazione | Scrivere API docs, file README |
+| `file-parser` | qwen3.6-plus | Analizzare immagini, documenti, video (multimodale) | Analisi file, OCR, estrazione contenuti |
+| `scout` | deepseek-v4-flash | Ricerca documentazione esterna e dipendenze | Investigare codice librerie, confrontare con upstream |
 | `general` | deepseek-v4-flash | Ricerca generica e task multi-step | Domande complesse, esplorazione aperta |
 
 ### Esempi di Utilizzo per Agente
@@ -49,27 +49,16 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 
 **Risposta attesa:** Diagrammi architettura, breakdown componenti, raccomandazioni tecnologiche.
 
-#### plan-opus
+#### ultraplan
 
-**Scopo:** Pianificazione approfondita per sistemi complessi. Usa lo stesso modello di plan ma con temperatura più bassa per analisi più metodica ed esaustiva.
+**Scopo:** Pianificazione multi-fase approfondita per sistemi complessi usando la skill ultraplan. Esegue 6 fasi (UNDERSTAND, RESEARCH, PLAN, REVIEW, VALIDATE, OUTPUT) con subagenti di ricerca paralleli e discovery esaustiva.
 
 **Prompt di esempio:**
 - "Design a comprehensive migration strategy from monolith to microservices"
 - "Plan the full architecture for a multi-tenant SaaS platform with detailed component boundaries"
 - "Create an exhaustive implementation plan for adding end-to-end encryption"
 
-**Risposta attesa:** Architettura dettagliata con edge case, trade-off e percorsi di migrazione.
-
-#### plan-haiku
-
-**Scopo:** Schizzi implementazione rapidi e pianificazione leggera. Veloce, conciso, sufficiente per feature semplici.
-
-**Prompt di esempio:**
-- "Sketch a plan for adding a health check endpoint to the API"
-- "Quick implementation plan for a CLI flag parser"
-- "Lightweight plan for adding input validation to this form"
-
-**Risposta attesa:** Passi concisi, focalizzati sul percorso implementativo essenziale.
+**Risposta attesa:** Directory `.ultraplan/` completa con PRD, piano tecnico, matrice tracciabilità e sommario.
 
 #### explore
 
@@ -103,6 +92,17 @@ Gli agenti sono configurati in `.opencode/opencode.json`. L'agente predefinito �
 - "Review my code for performance improvements"
 
 **Risposta attesa:** Risultati sicurezza, report bug, suggerimenti miglioramento.
+
+#### scout
+
+**Scopo:** Agente read-only per documentazione esterna e ricerca dipendenze.
+
+**Prompt di esempio:**
+- "Research the API of a third-party library we depend on"
+- "Clone repo X and inspect how they handle authentication"
+- "Cross-reference our implementation with an upstream library"
+
+**Risposta attesa:** Analisi codice esterno, insight dipendenze, risultati documentazione.
 
 #### docs
 
