@@ -1,15 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-*.egg
-.venv/
-.venv*/
-venv/
-venv*/
-
 # Environment
 .env
 .env.local
@@ -25,32 +13,29 @@ venv*/
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-storage/logs/*.log
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
 
-# Temp & Cache
-storage/temp/*
-!storage/temp/.gitkeep
-storage/models/*
-!storage/models/.gitkeep
-storage/uploads/*
-!storage/uploads/.gitkeep
+# Storage
+storage/*
+!storage/.gitkeep
+
+# Plans
+docs/superpowers/plans/*
+!docs/superpowers/plans/.gitkeep
+
+# Dashboard build
+src/dashboard/client/dist/
 
 # Coverage
-.coverage
-.coverage/
 coverage/
 coverage.json
-.pytest_cache/
-.cache/
-htmlcov/
+vitest-output/
 
 # OpenCode generated files
 .opencode/node_modules/
 .opencode/package.json
 .opencode/package-lock.json
 .opencode/plans/
-
-# Reference projects (local only)
-reference/
