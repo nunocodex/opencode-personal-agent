@@ -56,6 +56,7 @@ export function photoHandler(
         return;
       }
       console.log("[photo] raw data keys:", Object.keys(data || {}));
+      console.log("[photo] info:", JSON.stringify(data?.info).slice(0, 500));
       console.log("[photo] raw parts:", JSON.stringify(data?.parts).slice(0, 500));
 
       const response = data?.parts
