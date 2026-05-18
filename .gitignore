@@ -46,5 +46,11 @@ coverage.json
 .cache/
 htmlcov/
 
+# OpenCode generated files
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/plans/
+
 # Reference projects (local only)
 reference/
