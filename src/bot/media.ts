@@ -42,16 +42,31 @@ export function photoHandler(
       console.log("[photo] session created:", session.id);
 
       console.log("[photo] sending to opencode...");
-      const response = await sendMediaMessage(
-        client,
-        session.id,
-        caption,
-        dataUri,
-        "image/jpeg",
-        config.MEDIA_MODEL
-      );
-      console.log("[photo] response received, length:", response.length);
+      const { data, error: promptError } = await client.session.prompt({
+        sessionID: session.id,
+        model: { providerID: "opencode-go", modelID: "qwen3.5-plus" },
+        parts: [
+          { type: "text", text: caption },
+          { type: "file", mime: "image/jpeg", filename: "media", url: dataUri },
+        ],
+      });
+      if (promptError) {
+        console.error("[photo] opencode error:", JSON.stringify(promptError));
+        await ctx.reply("Errore AI: " + (promptError as any).message);
+        return;
+      }
+      console.log("[photo] raw data keys:", Object.keys(data || {}));
+      console.log("[photo] raw parts:", JSON.stringify(data?.parts).slice(0, 500));
 
+      const response = data?.parts
+        ? (data.parts as any[])
+            .map((p: any) => (p.type === "text" ? p.text : ""))
+            .filter(Boolean)
+            .join("\n")
+        : "";
+
+      console.log("[photo] response received, length:", response.length);
+      
       await deleteSessionById(client, session.id).catch(() => {});
 
       await sendReply(ctx, response);
