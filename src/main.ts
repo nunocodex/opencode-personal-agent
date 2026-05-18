@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config";
 import { createClient } from "./opencode/client";
 import { createBot } from "./bot/app";
+import { createDashboard, updateDashboard } from "./dashboard/server";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,8 +57,15 @@ async function main(): Promise<void> {
   const client = createClient(config);
   const bot = createBot(config, client);
 
+  const dashboard = createDashboard(config);
+  dashboard.listen(config.DASHBOARD_PORT, () => {
+    console.log(`Dashboard: http://localhost:${config.DASHBOARD_PORT}`);
+  });
+
   const me = await bot.api.getMe();
   console.log(`Bot started: @${me.username}`);
+
+  updateDashboard({ uptime: 0, sessions: 0 });
 
   bot.start({
     onStart: () => {
