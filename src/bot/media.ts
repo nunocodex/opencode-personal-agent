@@ -32,7 +32,7 @@ export function photoHandler(
 
       const fileUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
       const dataUri = await fileUrlToDataUri(fileUrl);
-      console.log("[photo] dataUri length:", dataUri.length);
+      console.log("[photo] dataUri prefix:", dataUri.slice(0, 30));
 
       const caption = ctx.message.caption ?? "Describe this image";
       console.log("[photo] caption:", caption);
@@ -41,13 +41,16 @@ export function photoHandler(
       const session = await createSession(client, "Media");
       console.log("[photo] session created:", session.id);
 
+      const mime = dataUri.slice(5, dataUri.indexOf(";"));
+      console.log("[photo] using mime:", mime);
+
       console.log("[photo] sending to opencode...");
       const { data, error: promptError } = await client.session.prompt({
         sessionID: session.id,
         model: { providerID: "opencode-go", modelID: "qwen3.5-plus" },
         parts: [
           { type: "text", text: caption },
-          { type: "file", mime: "image/jpeg", filename: "media", url: dataUri },
+          { type: "file", mime, filename: "media", url: dataUri },
         ],
       });
       if (promptError) {
@@ -149,10 +152,25 @@ export function voiceHandler(
   };
 }
 
+const MIME_FROM_EXT: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  pdf: "application/pdf",
+  txt: "text/plain",
+};
+
+function guessMime(url: string): string {
+  const ext = url.split(".").pop()?.toLowerCase() ?? "";
+  return MIME_FROM_EXT[ext] ?? "application/octet-stream";
+}
+
 async function fileUrlToDataUri(url: string): Promise<string> {
   const response = await fetch(url);
   const buffer = await response.arrayBuffer();
   const base64 = Buffer.from(buffer).toString("base64");
-  const mime = response.headers.get("content-type") ?? "application/octet-stream";
+  const mime = guessMime(url);
+  console.log("[dataUri] guessed mime:", mime);
   return `data:${mime};base64,${base64}`;
 }
