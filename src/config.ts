@@ -1,4 +1,22 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
+
+// Load .env with override BEFORE zod parse (ESM-safe: no import hoisting issues)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, "..", ".env");
+if (fs.existsSync(envPath)) {
+  const raw = fs.readFileSync(envPath, "utf-8");
+  for (const line of raw.split("\n")) {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const val = match[2].trim().replace(/^["']|["']$/g, "");
+      process.env[key] = val;
+    }
+  }
+}
 
 const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z
