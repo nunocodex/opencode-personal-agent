@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Config } from "../config";
@@ -27,7 +28,11 @@ export function createDashboard(config: Config) {
   app.use(express.json());
 
   const clientDist = path.resolve(__dirname, "client", "dist");
-  app.use(express.static(clientDist));
+  if (fs.existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+  } else {
+    console.log("[dashboard] dist not found, API-only mode (use Vite :5173 for UI)");
+  }
 
   app.get("/api/status", (_req, res) => {
     res.json({
@@ -43,9 +48,17 @@ export function createDashboard(config: Config) {
     });
   });
 
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(clientDist, "index.html"));
-  });
+  // SPA catch-all — must be after API routes
+  if (fs.existsSync(clientDist)) {
+    app.get("*", (_req, res) => {
+      const indexPath = path.join(clientDist, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).json({ error: "Dashboard not built. Use Vite dev server on :5173." });
+      }
+    });
+  }
 
   return app;
 }
