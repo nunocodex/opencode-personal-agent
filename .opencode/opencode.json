@@ -1,121 +1,69 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/deepseek-v4-flash",
-  "default_agent": "build",
+  "default_agent": "telegram",
   "plugin": [
     "superpowers@git+https://github.com/obra/superpowers.git",
-    "@asidorenko/openslimedit"
+    "opencode-scheduler",
+    "opencode-working-memory",
+    "envsitter-guard@latest"
   ],
+  "server": {
+    "port": 4096,
+    "cors": ["http://localhost:3000"]
+  },
+  "permission": {
+    "skill": { "*": "allow" }
+  },
   "agent": {
     "plan": {
       "description": "Designs implementation plans from specifications. Read-only, never modifies code.",
       "mode": "primary",
-      "model": "opencode-go/glm-5.1",
-      "color": "#2196F3",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny",
-        "skill": {
-          "*": "deny",
-          "writing-plans": "allow"
-        }
-      }
+      "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "{file:./prompts/plan.md}",
+      "tools": { "edit": false, "write": false, "bash": false }
     },
     "build": {
-      "description": "Implements code, runs tests, follows plans with TDD and verification.",
+      "description": "Implements code following plans with TDD and verification.",
       "mode": "primary",
       "model": "opencode-go/deepseek-v4-flash",
-      "color": "#4CAF50",
-      "permission": {
-        "skill": {
-          "*": "deny",
-          "test-driven-development": "allow",
-          "verification-before-completion": "allow",
-          "executing-plans": "allow"
-        }
-      }
+      "prompt": "{file:./prompts/build.md}"
     },
     "debug": {
-      "description": "Investigates root cause of bugs using a systematic 4-phase method. No fix without diagnosis.",
+      "description": "Investigates bugs using systematic root cause analysis. No fix without diagnosis.",
       "mode": "primary",
-      "model": "opencode-go/glm-5.1",
-      "color": "#FF5722",
-      "permission": {
-        "edit": "ask",
-        "skill": {
-          "*": "deny",
-          "systematic-debugging": "allow"
-        }
-      }
-    },
-    "review": {
-      "description": "Reviews code for bugs, security issues, and best practices. Read-only.",
-      "mode": "primary",
-      "model": "opencode-go/glm-5.1",
-      "temperature": 0.1,
-      "color": "#9C27B0",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny",
-        "skill": {
-          "*": "deny",
-          "requesting-code-review": "allow"
-        }
-      }
-    },
-    "docs": {
-      "description": "Writes and maintains project documentation, docstrings, README, and API docs.",
-      "mode": "primary",
-      "model": "opencode-go/deepseek-v4-pro",
-      "temperature": 0.2,
-      "color": "#607D8B",
-      "permission": {
-        "edit": "allow",
-        "bash": "deny"
-      }
-    },
-    "file-parser": {
-      "description": "Analyzes images, documents, and media files. Read-only: extracts text, describes content, summarizes documents. No code execution or file modification.",
-      "mode": "primary",
-      "model": "opencode-go/kimi-k2.6",
-      "temperature": 0.2,
-      "color": "#FF9800",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny",
-        "skill": {
-          "*": "deny"
-        }
-      }
-    },
-    "explore": {
-      "description": "Fast agent specialized for exploring codebases. Quickly finds files by patterns, searches code for keywords, and answers questions about codebase structure.",
       "model": "opencode-go/deepseek-v4-flash",
-      "color": "#00BCD4",
-      "permission": {
-        "edit": "deny",
-        "bash": "ask",
-        "skill": {
-          "*": "deny"
-        }
-      }
+      "prompt": "Investigate bugs systematically. Load superpowers:systematic-debugging before fixing. No code changes without root cause. If 3+ fixes failed, question architecture."
     },
     "general": {
-      "description": "General-purpose agent for researching complex questions and executing multi-step tasks.",
+      "description": "General-purpose agent for researching complex questions and multi-step tasks.",
+      "mode": "subagent",
       "model": "opencode-go/deepseek-v4-flash",
-      "color": "#795548",
-      "permission": {
-        "edit": "allow",
-        "bash": "allow",
-        "skill": {
-          "*": "allow"
-        }
-      }
-    }
-  },
-  "permission": {
-    "skill": {
-      "*": "allow"
+      "prompt": "General-purpose researcher for TypeScript ESM project. Execute multi-step tasks."
+    },
+    "explore": {
+      "description": "Fast read-only agent for exploring the codebase. Finds files, searches code, answers structure questions.",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "Codebase explorer. Find files by pattern, search code, explain project structure. Read-only.",
+      "tools": { "write": false, "edit": false, "bash": false }
+    },
+    "scout": {
+      "description": "Read-only agent for researching external dependencies and documentation.",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "Research external documentation, npm packages, and library source code. Never modify project files.",
+      "tools": { "write": false, "edit": false }
+    },
+    "docs-writer": {
+      "description": "Writes and maintains project documentation.",
+      "mode": "subagent",
+      "prompt": "You are a technical writer. Create clear, comprehensive documentation.\nFocus on:\n- Clear explanations\n- Proper structure\n- Code examples\n- User-friendly language"
+    },
+    "security-auditor": {
+      "description": "Performs security audits and identifies vulnerabilities.",
+      "mode": "subagent",
+      "prompt": "You are a security expert. Focus on identifying potential security issues.\nLook for:\n- Input validation vulnerabilities\n- Authentication and authorization flaws\n- Data exposure risks\n- Dependency vulnerabilities\n- Configuration security issues"
     }
   }
 }

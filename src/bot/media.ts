@@ -3,6 +3,7 @@ import type { OpencodeClient } from "@opencode-ai/sdk/v2";
 import type { Config } from "../config";
 import { createSession, sendMediaMessage, deleteSessionById } from "../opencode/client";
 import { sendReply } from "./utils";
+import { messages } from "./messages";
 
 export function photoHandler(
   config: Config,
@@ -38,9 +39,7 @@ export function photoHandler(
       await sendReply(ctx, response);
     } catch (error) {
       console.error("Photo handler error:", error);
-      await ctx.reply("Errore nell'analisi dell'immagine\\.", {
-        parse_mode: "MarkdownV2",
-      });
+      await ctx.reply(messages.mediaError, { parse_mode: "MarkdownV2" });
     }
   };
 }
@@ -62,10 +61,9 @@ export function documentHandler(
     ];
 
     if (!doc.mime_type || !allowedMimes.includes(doc.mime_type)) {
-      await ctx.reply(
-        "Formato non supportato\\. Supporto: PDF, immagini, testo\\.",
-        { parse_mode: "MarkdownV2" }
-      );
+      await ctx.reply(messages.unsupportedFormat, {
+        parse_mode: "MarkdownV2",
+      });
       return;
     }
 
@@ -93,9 +91,7 @@ export function documentHandler(
       await sendReply(ctx, response);
     } catch (error) {
       console.error("Document handler error:", error);
-      await ctx.reply("Errore nell'analisi del documento\\.", {
-        parse_mode: "MarkdownV2",
-      });
+      await ctx.reply(messages.mediaError, { parse_mode: "MarkdownV2" });
     }
   };
 }
@@ -110,7 +106,7 @@ export function voiceHandler(
     await ctx.api.sendChatAction(ctx.chat!.id, "typing");
 
     try {
-      await ctx.reply("Trascrizione voce non ancora implementata\\.", {
+      await ctx.reply(messages.voiceNotImplemented, {
         parse_mode: "MarkdownV2",
       });
     } catch (error) {

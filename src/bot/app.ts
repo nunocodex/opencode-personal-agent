@@ -2,6 +2,7 @@ import { Bot } from "grammy";
 import type { Config } from "../config";
 import type { OpencodeClient } from "@opencode-ai/sdk/v2";
 import { checkAuth } from "./utils";
+import { messages } from "./messages";
 import {
   startHandler,
   helpHandler,
@@ -16,7 +17,7 @@ export function createBot(config: Config, client: OpencodeClient): Bot {
 
   bot.use(async (ctx, next) => {
     if (!checkAuth(ctx, config.TELEGRAM_ALLOWED_USER_ID)) {
-      await ctx.reply("Accesso negato\\.");
+      await ctx.reply(messages.accessDenied);
       return;
     }
     await next();
