@@ -4,22 +4,25 @@
     "GEMINI_API_KEY": "..."
   },
   "gateway": {
-    "port": 18789
+    "port": 18789,
+    "mode": "local"
   },
   "agents": {
     "defaults": {
       "model": {
         "primary": "deepseek/deepseek-v4-flash",
-        "fallbacks": ["google/gemini-3-flash-preview"]
+        "fallbacks": [
+          "google/gemini-3-flash-preview"
+        ]
       },
       "imageModel": {
         "primary": "google/gemini-3-flash-preview"
       }
     }
   },
-  "channels": {
-    "telegram": {
-      "botToken": "<token da @BotFather>"
-    }
+  "channels": {},
+  "meta": {
+    "lastTouchedVersion": "2026.5.18",
+    "lastTouchedAt": "2026-05-19T00:53:09.178Z"
   }
 }
