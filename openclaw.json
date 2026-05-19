@@ -1,8 +1,4 @@
 {
-  "env": {
-    "DEEPSEEK_API_KEY": "sk-...",
-    "GEMINI_API_KEY": "..."
-  },
   "gateway": {
     "port": 18789,
     "mode": "local"
@@ -20,9 +16,5 @@
       }
     }
   },
-  "channels": {},
-  "meta": {
-    "lastTouchedVersion": "2026.5.18",
-    "lastTouchedAt": "2026-05-19T00:53:09.178Z"
-  }
+  "channels": {}
 }
