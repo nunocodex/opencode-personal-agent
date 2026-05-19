@@ -1,36 +1,42 @@
 # OpenClaw — Personal AI Assistant
 
-Testing OpenClaw on Windows with DeepSeek + Gemini Vision.
-If successful, migrate to Linux mini PC for permanent setup.
+Personal AI assistant using DeepSeek (text) + Gemini Flash (vision) via Telegram.
 
-## Setup
+## Quick start
+
+### Linux (recommended)
+
+See full guide: [`docs/setup-linux.md`](docs/setup-linux.md)
+
+### Windows (WSL2)
+
+See Linux guide above — same commands on WSL2.
+
+### Windows (native)
 
 ```powershell
-# 1. Install OpenClaw
 npm install -g openclaw@latest
-
-# 2. Create .env from template
 copy .env.example .env
-
-# 3. Edit .env with your keys:
-#    DEEPSEEK_API_KEY (from https://platform.deepseek.com/api_keys)
-#    GEMINI_API_KEY  (from https://aistudio.google.com/apikey)
-#    TELEGRAM_BOT_TOKEN (from @BotFather)
-#    TELEGRAM_OWNER_ID (your Telegram user ID)
-
-# 4. Start the gateway
+# edit .env with your keys
 .\start-openclaw.ps1
-
-# Gateway listens on http://localhost:18789
 ```
 
-## Structure
+## Project structure
 
 ```
-openclaw.json          # Model, channel, owner config (committed to git)
-.env                   # API keys, secrets (gitignored)
-start-openclaw.ps1     # Launcher script
+openclaw.json           # Config: models, channels, owner (committed)
+.env                    # API keys, token secrets (gitignored)
+.env.example            # Template for .env
+docs/setup-linux.md     # Full Linux setup guide
+AGENTS.md               # Project rules for OpenCode CLI
 ```
+
+## Branch reference
+
+| Branch | Content |
+|--------|---------|
+| `feat/openclaw` | OpenClaw config + setup guides |
+| `feat/telegram-bot` | Custom Telegram bot (grammY + Vue) |
 
 ## Estimated costs
 
@@ -38,4 +44,4 @@ start-openclaw.ps1     # Launcher script
 |----------|-------|------|
 | DeepSeek API | deepseek-v4-flash | $0.14/1M input |
 | Gemini API | gemini-3-flash-preview | ~$0.15/1M input |
-| **Total** (500 msgs + 50 photos/month) | | **~$0.12/month** |
+| **Total** (personal use) | | **~$0.27/month** |
