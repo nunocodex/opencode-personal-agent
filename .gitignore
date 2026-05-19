@@ -1,7 +1,6 @@
 # Environment
 .env
 .env.local
-.env.*.local
 
 # IDE
 .vscode/
@@ -13,29 +12,5 @@
 .DS_Store
 Thumbs.db
 
-# Node
+# OpenClaw local data
 node_modules/
-dist/
-*.tsbuildinfo
-
-# Storage
-storage/*
-!storage/.gitkeep
-
-# Plans
-docs/superpowers/plans/*
-!docs/superpowers/plans/.gitkeep
-
-# Dashboard build
-src/dashboard/client/dist/
-
-# Coverage
-coverage/
-coverage.json
-vitest-output/
-
-# OpenCode generated files
-.opencode/node_modules/
-.opencode/package.json
-.opencode/package-lock.json
-.opencode/plans/
