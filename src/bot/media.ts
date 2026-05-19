@@ -32,6 +32,7 @@ export function photoHandler(
       const { data, error: promptError } = await client.session.prompt({
         sessionID: session.id,
         model: { providerID: "opencode-go", modelID: "qwen3.5-plus" },
+        system: "You are a vision model. Analyze the image directly.",
         parts: [
           { type: "text", text: caption },
           { type: "file", mime, filename: "media", url: dataUri },
