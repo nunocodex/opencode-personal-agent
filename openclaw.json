@@ -3,6 +3,9 @@
     "port": 18789,
     "mode": "local"
   },
+  "commands": {
+    "ownerAllowFrom": ["telegram:${TELEGRAM_OWNER_ID}"]
+  },
   "agents": {
     "defaults": {
       "model": {
@@ -16,5 +19,9 @@
       }
     }
   },
-  "channels": {}
+  "channels": {
+    "telegram": {
+      "botToken": "${TELEGRAM_BOT_TOKEN}"
+    }
+  }
 }
