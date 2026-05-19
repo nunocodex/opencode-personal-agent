@@ -64,7 +64,11 @@ export function photoHandler(
 
       const response = data?.parts
         ? (data.parts as any[])
-            .map((p: any) => (p.type === "text" ? p.text : ""))
+            .map((p: any) => {
+              if (p.type === "text" && p.text) return p.text;
+              if (p.type === "reasoning" && p.text) return p.text;
+              return "";
+            })
             .filter(Boolean)
             .join("\n")
         : "";
