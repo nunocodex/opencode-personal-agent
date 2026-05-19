@@ -89,12 +89,10 @@ interface ResponsePart {
 function stringifyResponse(parts: unknown): string {
   if (!Array.isArray(parts)) return String(parts);
 
-  return (parts as ResponsePart[])
-    .map((p) => {
-      if (p.type === "text" && p.text) return p.text;
-      if (p.type === "step-start" || p.type === "step-finish") return "";
-      return "";
-    })
-    .filter(Boolean)
-    .join("\n");
+  const filtered = (parts as ResponsePart[]);
+  const textParts = filtered.filter(p => p.type === "text" && p.text).map(p => p.text!);
+  if (textParts.length > 0) return textParts.join("\n");
+
+  const reasoningParts = filtered.filter(p => p.type === "reasoning" && p.text).map(p => p.text!);
+  return reasoningParts.join("\n");
 }

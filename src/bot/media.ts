@@ -10,41 +10,25 @@ export function photoHandler(
   client: OpencodeClient
 ) {
   return async (ctx: Context): Promise<void> => {
-    if (!ctx.message?.photo) {
-      console.log("[photo] no photo in message");
-      return;
-    }
-    console.log("[photo] received, size:", ctx.message.photo.length);
+    if (!ctx.message?.photo) return;
 
     await ctx.api.sendChatAction(ctx.chat!.id, "typing");
 
     const largest = ctx.message.photo[ctx.message.photo.length - 1];
-    console.log("[photo] largest file_id:", largest.file_id.slice(0, 10) + "...");
 
     try {
       const file = await ctx.api.getFile(largest.file_id);
       if (!file.file_path) {
-        console.error("[photo] no file_path from getFile");
         await ctx.reply("Errore: impossibile scaricare il file.");
         return;
       }
-      console.log("[photo] file_path:", file.file_path);
 
       const fileUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
       const dataUri = await fileUrlToDataUri(fileUrl);
-      console.log("[photo] dataUri prefix:", dataUri.slice(0, 30));
-
       const caption = ctx.message.caption ?? "Describe this image";
-      console.log("[photo] caption:", caption);
-      console.log("[photo] creating session...");
+      const mime = dataUri.slice(5, dataUri.indexOf(";"));
 
       const session = await createSession(client, "Media");
-      console.log("[photo] session created:", session.id);
-
-      const mime = dataUri.slice(5, dataUri.indexOf(";"));
-      console.log("[photo] using mime:", mime);
-
-      console.log("[photo] sending to opencode...");
       const { data, error: promptError } = await client.session.prompt({
         sessionID: session.id,
         model: { providerID: "opencode-go", modelID: "qwen3.5-plus" },
@@ -54,29 +38,21 @@ export function photoHandler(
         ],
       });
       if (promptError) {
-        console.error("[photo] opencode error:", JSON.stringify(promptError));
-        await ctx.reply("Errore AI: " + (promptError as any).message);
+        await ctx.reply("Errore AI nell'analisi dell'immagine.");
         return;
       }
-      console.log("[photo] raw data keys:", Object.keys(data || {}));
-      console.log("[photo] info:", JSON.stringify(data?.info).slice(0, 500));
-      console.log("[photo] raw parts:", JSON.stringify(data?.parts).slice(0, 500));
 
       const response = data?.parts
-        ? (data.parts as any[])
-            .map((p: any) => {
-              if (p.type === "text" && p.text) return p.text;
-              if (p.type === "reasoning" && p.text) return p.text;
-              return "";
-            })
-            .filter(Boolean)
-            .join("\n")
+        ? (() => {
+            const parts = data.parts as any[];
+            const textParts = parts.filter(p => p.type === "text" && p.text).map(p => p.text);
+            if (textParts.length > 0) return textParts.join("\n");
+            const reasoningParts = parts.filter(p => p.type === "reasoning" && p.text).map(p => p.text);
+            return reasoningParts.join("\n");
+          })()
         : "";
 
-      console.log("[photo] response received, length:", response.length);
-      
       await deleteSessionById(client, session.id).catch(() => {});
-
       await sendReply(ctx, response);
     } catch (error) {
       console.error("[photo] ERROR:", error);
