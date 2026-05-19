@@ -23,6 +23,10 @@ export function createBot(config: Config, client: OpencodeClient): Bot {
     await next();
   });
 
+  bot.catch((err) => {
+    console.error("[bot] Unhandled error:", err.error);
+  });
+
   bot.command("start", startHandler);
   bot.command("help", helpHandler);
   bot.command("new", newSessionHandler(config, client));

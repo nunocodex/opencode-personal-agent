@@ -26,7 +26,7 @@ export async function sendReply(
   text: string
 ): Promise<void> {
   if (isJsonResponse(text)) {
-    await ctx.reply("```json\n" + text + "\n```", { parse_mode: "MarkdownV2" });
+    await ctx.reply("<code>" + escapeHtml(text) + "</code>", { parse_mode: "HTML" });
     return;
   }
 
@@ -34,6 +34,13 @@ export async function sendReply(
   for (const chunk of chunks) {
     await ctx.reply(chunk);
   }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 export function checkAuth(

@@ -14,14 +14,14 @@ import {
   sessionCount,
 } from "../memory/session";
 import { sendReply } from "./utils";
-import { messages } from "./messages";
+import { messages, PARSE_MODE } from "./messages";
 
 export async function startHandler(ctx: Context): Promise<void> {
-  await ctx.reply(messages.start, { parse_mode: "MarkdownV2" });
+  await ctx.reply(messages.start, { parse_mode: PARSE_MODE });
 }
 
 export async function helpHandler(ctx: Context): Promise<void> {
-  await ctx.reply(messages.help, { parse_mode: "MarkdownV2" });
+  await ctx.reply(messages.help, { parse_mode: PARSE_MODE });
 }
 
 export function newSessionHandler(
@@ -35,7 +35,7 @@ export function newSessionHandler(
       await deleteSessionById(client, existingId).catch(() => {});
       deleteSession(userId);
     }
-    await ctx.reply(messages.newSession, { parse_mode: "MarkdownV2" });
+    await ctx.reply(messages.newSession, { parse_mode: PARSE_MODE });
   };
 }
 
@@ -44,10 +44,10 @@ export function statusHandler() {
     const userId = ctx.from!.id;
     if (hasSession(userId)) {
       await ctx.reply(messages.sessionActive(sessionCount()), {
-        parse_mode: "MarkdownV2",
+        parse_mode: PARSE_MODE,
       });
     } else {
-      await ctx.reply(messages.noSession, { parse_mode: "MarkdownV2" });
+      await ctx.reply(messages.noSession, { parse_mode: PARSE_MODE });
     }
   };
 }
@@ -74,7 +74,7 @@ export function textHandler(
       await sendReply(ctx, response);
     } catch (error) {
       console.error("Text handler error:", error);
-      await ctx.reply(messages.opencodeError, { parse_mode: "MarkdownV2" });
+      await ctx.reply(messages.opencodeError, { parse_mode: PARSE_MODE });
     }
   };
 }

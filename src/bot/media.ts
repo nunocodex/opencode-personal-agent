@@ -5,7 +5,7 @@ import { createSession, sendMediaMessage, deleteSessionById, sendMessage } from 
 import { getSession, setSession } from "../memory/session";
 import { transcribeOgg } from "../voice/transcriber";
 import { sendReply } from "./utils";
-import { messages } from "./messages";
+import { messages, PARSE_MODE } from "./messages";
 
 export function photoHandler(
   config: Config,
@@ -60,7 +60,7 @@ export function photoHandler(
       await sendReply(ctx, response);
     } catch (error) {
       console.error("[photo] ERROR:", error);
-      await ctx.reply(messages.mediaError, { parse_mode: "MarkdownV2" });
+      await ctx.reply(messages.mediaError, { parse_mode: PARSE_MODE });
     }
   };
 }
@@ -83,7 +83,7 @@ export function documentHandler(
 
     if (!doc.mime_type || !allowedMimes.includes(doc.mime_type)) {
       await ctx.reply(messages.unsupportedFormat, {
-        parse_mode: "MarkdownV2",
+        parse_mode: PARSE_MODE,
       });
       return;
     }
@@ -112,7 +112,7 @@ export function documentHandler(
       await sendReply(ctx, response);
     } catch (error) {
       console.error("Document handler error:", error);
-      await ctx.reply(messages.mediaError, { parse_mode: "MarkdownV2" });
+      await ctx.reply(messages.mediaError, { parse_mode: PARSE_MODE });
     }
   };
 }
@@ -145,7 +145,7 @@ export function voiceHandler(
 
       // Step 3: Confirm transcription to user
       await ctx.reply(`🎤 *Trascrizione:* ${transcription}`, {
-        parse_mode: "MarkdownV2",
+        parse_mode: PARSE_MODE,
       });
 
       // Step 4: Send transcription to user's session
