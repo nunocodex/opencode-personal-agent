@@ -1,7 +1,9 @@
 import type { Context } from "grammy";
 import type { OpencodeClient } from "@opencode-ai/sdk/v2";
 import type { Config } from "../config";
-import { createSession, sendMediaMessage, deleteSessionById } from "../opencode/client";
+import { createSession, sendMediaMessage, deleteSessionById, sendMessage } from "../opencode/client";
+import { getSession, setSession } from "../memory/session";
+import { transcribeOgg } from "../voice/transcriber";
 import { sendReply } from "./utils";
 import { messages } from "./messages";
 
@@ -125,11 +127,42 @@ export function voiceHandler(
     await ctx.api.sendChatAction(ctx.chat!.id, "typing");
 
     try {
-      await ctx.reply(messages.voiceNotImplemented, {
+      // Step 1: Download voice file
+      const file = await ctx.api.getFile(ctx.message.voice.file_id);
+      if (!file.file_path) {
+        await ctx.reply("Errore nel download del messaggio vocale.");
+        return;
+      }
+
+      const fileUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+      const response = await fetch(fileUrl);
+      const oggBuffer = new Uint8Array(await response.arrayBuffer());
+      console.log("[voice] downloaded, size:", oggBuffer.length);
+
+      // Step 2: Transcribe
+      const transcription = await transcribeOgg(oggBuffer);
+      console.log("[voice] transcription:", transcription);
+
+      // Step 3: Confirm transcription to user
+      await ctx.reply(`🎤 *Trascrizione:* ${transcription}`, {
         parse_mode: "MarkdownV2",
       });
+
+      // Step 4: Send transcription to user's session
+      const userId = ctx.from!.id;
+      let sessionId = getSession(userId);
+      if (!sessionId) {
+        const session = await createSession(client);
+        sessionId = session.id;
+        setSession(userId, sessionId);
+      }
+
+      await ctx.api.sendChatAction(ctx.chat!.id, "typing");
+      const aiResponse = await sendMessage(client, sessionId, transcription);
+      await sendReply(ctx, aiResponse);
     } catch (error) {
       console.error("Voice handler error:", error);
+      await ctx.reply("Errore nell'elaborazione del messaggio vocale.");
     }
   };
 }
