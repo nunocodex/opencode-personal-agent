@@ -2,6 +2,9 @@
 .env
 .env.local
 
+# OpenClaw config backup
+*.bak
+
 # IDE
 .vscode/
 .idea/
