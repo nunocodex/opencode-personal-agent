@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n serve,bot,dash -c blue,green,yellow \"opencode serve\" \"tsx watch src/main.ts\" \"vite dev --config src/dashboard/client/vite.config.ts\"",
+    "dev": "concurrently -n serve,bot,dash -c blue,green,yellow \"node scripts/serve.mjs\" \"tsx watch src/main.ts\" \"vite dev --config src/dashboard/client/vite.config.ts\"",
     "dev:dash": "vite dev --config src/dashboard/client/vite.config.ts",
     "build": "tsc",
     "build:dash": "vite build --config src/dashboard/client/vite.config.ts",
