@@ -28,10 +28,11 @@ export function photoHandler(
       const caption = ctx.message.caption ?? "Describe this image";
       const mime = dataUri.slice(5, dataUri.indexOf(";"));
 
+      const [mediaProvider, mediaModel] = config.MEDIA_MODEL.split("/");
       const session = await createSession(client, "Media");
       const { data, error: promptError } = await client.session.prompt({
         sessionID: session.id,
-        model: { providerID: "opencode-go", modelID: "qwen3.5-plus" },
+        model: { providerID: mediaProvider, modelID: mediaModel },
         system: "You are a vision model. Analyze the image directly.",
         parts: [
           { type: "text", text: caption },
